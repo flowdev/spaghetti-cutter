@@ -8,10 +8,17 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/flowdev/spaghetti-cutter/config"
+	"github.com/flowdev/spaghetti-cutter/goast"
 )
 
 func main() {
-	fmt.Println("Root dir is: " + findRootDir())
+	rootDir := findRootDir()
+	fmt.Println("Root dir is: " + rootDir)
+	cfg := config.ParseConfig(os.Args[1:])
+	err := goast.WalkDirTree(rootDir, cfg)
+	fmt.Println("Last error:", err)
 }
 
 func findRootDir() string {
