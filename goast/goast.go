@@ -16,11 +16,6 @@ const (
 	goTestFileName = `_test.go`
 )
 
-var (
-	// True is the set 'value' for own maps that are really sets.
-	True = struct{}{}
-)
-
 //
 // packageDict is a simple dictionary of all known packages/paths and
 // their source parts.
@@ -53,14 +48,13 @@ func newPackageDict(root string) *packageDict {
 func WalkDirTree(root string, cfg config.Config) error {
 	fset := token.NewFileSet() // needed for any kind of parsing
 	packDict := newPackageDict(root)
-	ignore := sliceToSet(cfg.Ignore)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("ERROR: While walking the path %q: %v", path, err)
 			return err
 		}
 		if info.IsDir() {
-			if _, ok := ignore[info.Name()]; ok {
+			if _, ok := cfg.Ignore[info.Name()]; ok {
 				log.Printf("INFO: ignoring dir: %s", path)
 				return filepath.SkipDir
 			}
@@ -115,12 +109,4 @@ func lineFor(p token.Pos, fset *token.FileSet) int {
 	}
 
 	return 0
-}
-
-func sliceToSet(slice []string) map[string]struct{} {
-	m := make(map[string]struct{}, len(slice))
-	for _, s := range slice {
-		m[s] = True
-	}
-	return m
 }
