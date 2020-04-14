@@ -14,20 +14,29 @@ import (
 )
 
 func main() {
-	rootDir := findRootDir()
-	fmt.Println("Root dir is: " + rootDir)
-	cfg := config.ParseConfig(os.Args[1:])
-	err := goast.WalkDirTree(rootDir, cfg)
+	cfg := config.Parse(os.Args[1:])
+	cfg.God["main"] = config.Value // the main package can always access everything
+	cfg.Root = findRootDir(cfg.Root)
+	err := goast.WalkDirTree(cfg)
 	fmt.Println("Last error:", err)
 }
 
-func findRootDir() string {
-	dir := findGoModDir()
+func findRootDir(dir string) string {
 	if dir != "" {
 		return dir
 	}
 
-	dir = findVendorDir()
+	dir = findGoModDir()
+	if dir != "" {
+		return dir
+	}
+
+	dir = crawlUpAndFindDirOf(config.File, ".")
+	if dir != "" {
+		return dir
+	}
+
+	dir = crawlUpAndFindDirOf("vendor", ".")
 	if dir == "" {
 		absDir, _ := filepath.Abs(".") // we checked this just inside of findVendorDir()
 		log.Fatalf("FATAL: Unable to find root directory for '%s'.", absDir)
@@ -35,18 +44,13 @@ func findRootDir() string {
 
 	return dir
 }
+
 func findGoModDir() string {
 	gomod := getOutputOfCmd("go", "env", "GOMOD")
-	if gomod == os.DevNull {
-		return ""
-	}
-	if gomod == "" {
+	if gomod == os.DevNull || gomod == "" {
 		return ""
 	}
 	return path.Dir(gomod)
-}
-func findVendorDir() string {
-	return crawlUpAndFindDirOf("vendor", ".")
 }
 
 func getOutputOfCmd(cmd string, args ...string) string {
@@ -56,6 +60,7 @@ func getOutputOfCmd(cmd string, args ...string) string {
 	}
 	return strings.TrimRight(string(out), "\r\n")
 }
+
 func crawlUpAndFindDirOf(file, startDir string) string {
 	absDir, err := filepath.Abs(startDir)
 	if err != nil {

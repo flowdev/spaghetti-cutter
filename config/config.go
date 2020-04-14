@@ -3,11 +3,15 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3"
 )
+
+// File is the name of the configuration file
+const File = ".spaghetti-cutter.json"
 
 var (
 	// Value is the set value for own maps that are really sets.
@@ -85,40 +89,46 @@ func setToString(set map[string]struct{}) string {
 // Config contains the parsed configuration.
 type Config struct {
 	Allow  MapSet
-	Tools  StringSet
+	Tool   StringSet
 	DB     StringSet
+	God    StringSet
 	Ignore StringSet
+	Root   string
 }
 
-// ParseConfig parses command line arguments and configuration file
-func ParseConfig(args []string) Config {
+// Parse parses command line arguments and configuration file
+func Parse(args []string) Config {
 	const (
-		allowUsage     = "allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')"
-		toolUsage      = "tool package (leave package) (e.g. 'pkg/x/**')"
-		dbUsage        = "common domain/database package (can only depend on tools)"
-		ignoreUsage    = "directory to ignore"
-		shorthandUsage = " (shorthand)"
+		usageAllow  = "allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')"
+		usageTool   = "tool package (leave package) (e.g. 'pkg/x/**')"
+		usageDB     = "common domain/database package (can only depend on tools)"
+		usageGod    = "god package that can see everything (default: 'main')"
+		usageIgnore = "directory to ignore"
+		usageRoot   = "root directory"
 	)
-	c := Config{
+	cfg := Config{
 		Allow:  make(map[string]map[string]struct{}),
-		Tools:  make(map[string]struct{}),
+		Tool:   make(map[string]struct{}),
 		DB:     make(map[string]struct{}),
+		God:    make(map[string]struct{}),
 		Ignore: make(map[string]struct{}),
 	}
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
-	fs.Var(&c.Allow, "a", allowUsage+shorthandUsage)
-	fs.Var(&c.Allow, "allow", allowUsage)
-	fs.Var(&c.Tools, "t", toolUsage+shorthandUsage)
-	fs.Var(&c.Tools, "tool", toolUsage)
-	fs.Var(&c.DB, "d", dbUsage+shorthandUsage)
-	fs.Var(&c.DB, "db", dbUsage)
-	fs.Var(&c.Ignore, "i", ignoreUsage+shorthandUsage)
-	fs.Var(&c.Ignore, "ignore", ignoreUsage)
+	fs.Var(&cfg.Allow, "allow", usageAllow)
+	fs.Var(&cfg.Tool, "tool", usageTool)
+	fs.Var(&cfg.DB, "db", usageDB)
+	fs.Var(&cfg.God, "god", usageGod)
+	fs.Var(&cfg.Ignore, "ignore", usageIgnore)
+	fs.StringVar(&cfg.Root, "root", "", usageRoot)
 
-	ff.Parse(fs, os.Args[1:],
+	err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("SPAGHETTI_CUTTER"),
-		ff.WithConfigFile(".spaghetti-cutter"),
+		ff.WithConfigFile(File),
 		ff.WithConfigFileParser(ff.JSONParser),
 	)
-	return c
+	if err != nil {
+		log.Fatalf("FATAL: Unable to parse command line arguments or configuration file: %v", err)
+	}
+
+	return cfg
 }

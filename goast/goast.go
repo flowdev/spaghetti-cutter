@@ -45,7 +45,16 @@ func newPackageDict(root string) *packageDict {
 
 // WalkDirTree is walking the directory tree starting at the given root path
 // looking for Go packages and analyzing them.
-func WalkDirTree(root string, cfg config.Config) error {
+func WalkDirTree(cfg config.Config) error {
+	fmt.Println("Parsed config:")
+	fmt.Println("    Ignore:", cfg.Ignore)
+	fmt.Println("    Tool:", cfg.Tool)
+	fmt.Println("    DB:", cfg.DB)
+	fmt.Println("    God:", cfg.God)
+	fmt.Println("    Allow:", cfg.Allow)
+	fmt.Println("    Root:", cfg.Root)
+
+	root := cfg.Root
 	fset := token.NewFileSet() // needed for any kind of parsing
 	packDict := newPackageDict(root)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
@@ -75,7 +84,6 @@ func processDir(dir string, fset *token.FileSet, packDict *packageDict) error {
 	if err != nil {
 		return fmt.Errorf("unable to parse the directory '%s': %v", dir, err)
 	}
-	fmt.Printf("DEBUG: %d packages found in dir %q with error: %v\n", len(pkgs), dir, err)
 	for _, pkg := range pkgs { // iterate over subpackages (e.g.: xxx and xxx_test)
 		if err := processPackage(pkg, fset, packDict); err != nil {
 			return err
