@@ -4,84 +4,48 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/config"
+	"github.com/flowdev/spaghetti-cutter/deps"
+	"github.com/flowdev/spaghetti-cutter/dirs"
 	"github.com/flowdev/spaghetti-cutter/parse"
+	"github.com/flowdev/spaghetti-cutter/size"
 )
 
 func main() {
+	var err error
+
 	cfg := config.Parse(os.Args[1:])
 	cfg.God["main"] = config.Value // the main package can always access everything
-	cfg.Root = findRootDir(cfg.Root)
-	pkgs, err := parse.DirTree(cfg.Root)
+
+	cfg.Root, err = dirs.FindRoot(cfg.Root)
 	if err != nil {
-		fmt.Println("ERROR:", err)
+		log.Printf("FATAL:  %v", err)
 		os.Exit(2)
 	}
 
+	pkgs, err := parse.DirTree(cfg.Root)
+	if err != nil {
+		log.Printf("FATAL: %v", err)
+		os.Exit(3)
+	}
+
+	var errs []error
+	rootPkg := parse.RootPkg(pkgs)
+	fmt.Printf("INFO: rootPkg = %q\n", rootPkg)
 	for _, pkg := range pkgs {
-		fmt.Println(pkg.ID, pkg.Name, pkg.PkgPath)
-	}
-}
-
-func findRootDir(dir string) string {
-	if dir != "" {
-		return dir
+		errs = addErrors(errs, deps.Check(pkg, cfg, rootPkg))
+		errs = addErrors(errs, size.Check(pkg, cfg.Size))
 	}
 
-	dir = findGoModDir()
-	if dir != "" {
-		return dir
-	}
-
-	dir = crawlUpAndFindDirOf(config.File, ".")
-	if dir != "" {
-		return dir
-	}
-
-	dir = crawlUpAndFindDirOf("vendor", ".")
-	if dir == "" {
-		absDir, _ := filepath.Abs(".") // we checked this just inside of findVendorDir()
-		log.Fatalf("FATAL: Unable to find root directory for '%s'.", absDir)
-	}
-
-	return dir
-}
-
-func findGoModDir() string {
-	gomod := getOutputOfCmd("go", "env", "GOMOD")
-	if gomod == os.DevNull || gomod == "" {
-		return ""
-	}
-	return path.Dir(gomod)
-}
-
-func getOutputOfCmd(cmd string, args ...string) string {
-	out, err := exec.Command(cmd, args...).Output()
-	if err != nil {
-		log.Fatalf("FATAL: Unable to execute command: %v", err)
-	}
-	return strings.TrimRight(string(out), "\r\n")
-}
-
-func crawlUpAndFindDirOf(file, startDir string) string {
-	absDir, err := filepath.Abs(startDir)
-	if err != nil {
-		log.Fatalf("FATAL: Unable to find absolute directory (for %s): %v", startDir, err)
-	}
-	volName := filepath.VolumeName(absDir)
-	oldDir := "" // set to impossible value first!
-
-	for ; absDir != volName && absDir != oldDir; absDir = filepath.Dir(absDir) {
-		path := filepath.Join(absDir, file)
-		if _, err = os.Stat(path); err == nil {
-			return absDir
+	if len(errs) > 0 {
+		for _, err = range errs {
+			fmt.Printf("ERROR: %v", err)
 		}
-		oldDir = absDir
+		os.Exit(1)
 	}
-	return ""
+}
+
+func addErrors(errs []error, newErrs []error) []error {
+	return append(errs, newErrs...)
 }

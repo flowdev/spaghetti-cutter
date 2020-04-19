@@ -94,6 +94,7 @@ type Config struct {
 	God    StringSet
 	Ignore StringSet
 	Root   string
+	Size   uint
 }
 
 // Parse parses command line arguments and configuration file
@@ -105,6 +106,8 @@ func Parse(args []string) Config {
 		usageGod    = "god package that can see everything (default: 'main')"
 		usageIgnore = "directory to ignore"
 		usageRoot   = "root directory"
+		usageSize   = "maximum size of a package in \"lines\""
+		defaultSize = 4096
 	)
 	cfg := Config{
 		Allow:  make(map[string]map[string]struct{}),
@@ -120,6 +123,7 @@ func Parse(args []string) Config {
 	fs.Var(&cfg.God, "god", usageGod)
 	fs.Var(&cfg.Ignore, "ignore", usageIgnore)
 	fs.StringVar(&cfg.Root, "root", "", usageRoot)
+	fs.UintVar(&cfg.Size, "size", defaultSize, usageSize)
 
 	err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("SPAGHETTI_CUTTER"),
@@ -130,5 +134,6 @@ func Parse(args []string) Config {
 		log.Fatalf("FATAL: Unable to parse command line arguments or configuration file: %v", err)
 	}
 
+	//fmt.Println("Parsed config:", cfg)
 	return cfg
 }
