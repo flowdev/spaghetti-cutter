@@ -88,13 +88,12 @@ func setToString(set map[string]struct{}) string {
 
 // Config contains the parsed configuration.
 type Config struct {
-	Allow  MapSet
-	Tool   StringSet
-	DB     StringSet
-	God    StringSet
-	Ignore StringSet
-	Root   string
-	Size   uint
+	Allow MapSet
+	Tool  StringSet
+	DB    StringSet
+	God   StringSet
+	Root  string
+	Size  uint
 }
 
 // Parse parses command line arguments and configuration file
@@ -104,24 +103,21 @@ func Parse(args []string) Config {
 		usageTool   = "tool package (leave package) (e.g. 'pkg/x/**')"
 		usageDB     = "common domain/database package (can only depend on tools)"
 		usageGod    = "god package that can see everything (default: 'main')"
-		usageIgnore = "directory to ignore"
 		usageRoot   = "root directory"
 		usageSize   = "maximum size of a package in \"lines\""
 		defaultSize = 4096
 	)
 	cfg := Config{
-		Allow:  make(map[string]map[string]struct{}),
-		Tool:   make(map[string]struct{}),
-		DB:     make(map[string]struct{}),
-		God:    make(map[string]struct{}),
-		Ignore: make(map[string]struct{}),
+		Allow: make(map[string]map[string]struct{}),
+		Tool:  make(map[string]struct{}),
+		DB:    make(map[string]struct{}),
+		God:   make(map[string]struct{}),
 	}
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.Var(&cfg.Allow, "allow", usageAllow)
 	fs.Var(&cfg.Tool, "tool", usageTool)
 	fs.Var(&cfg.DB, "db", usageDB)
 	fs.Var(&cfg.God, "god", usageGod)
-	fs.Var(&cfg.Ignore, "ignore", usageIgnore)
 	fs.StringVar(&cfg.Root, "root", "", usageRoot)
 	fs.UintVar(&cfg.Size, "size", defaultSize, usageSize)
 
