@@ -34,7 +34,7 @@ func main() {
 	rootPkg := parse.RootPkg(pkgs)
 	fmt.Printf("INFO: rootPkg = %q\n", rootPkg)
 	for _, pkg := range pkgs {
-		errs = addErrors(errs, deps.Check(pkg, cfg, rootPkg))
+		errs = addErrors(errs, deps.Check(pkg, rootPkg, cfg))
 		errs = addErrors(errs, size.Check(pkg, cfg.Size))
 	}
 
