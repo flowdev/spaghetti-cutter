@@ -10,15 +10,22 @@ import (
 	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/config"
-	"github.com/flowdev/spaghetti-cutter/goast"
+	"github.com/flowdev/spaghetti-cutter/parse"
 )
 
 func main() {
 	cfg := config.Parse(os.Args[1:])
 	cfg.God["main"] = config.Value // the main package can always access everything
 	cfg.Root = findRootDir(cfg.Root)
-	err := goast.WalkDirTree(cfg)
-	fmt.Println("Last error:", err)
+	pkgs, err := parse.DirTree(cfg.Root)
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		os.Exit(2)
+	}
+
+	for _, pkg := range pkgs {
+		fmt.Println(pkg.ID, pkg.Name, pkg.PkgPath)
+	}
 }
 
 func findRootDir(dir string) string {
