@@ -1,15 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
-	"github.com/flowdev/spaghetti-cutter/config"
 	"github.com/flowdev/spaghetti-cutter/deps"
 	"github.com/flowdev/spaghetti-cutter/dirs"
 	"github.com/flowdev/spaghetti-cutter/parse"
-	"github.com/flowdev/spaghetti-cutter/size"
+	"github.com/flowdev/spaghetti-cutter/x/config"
 )
 
 func main() {
@@ -23,6 +21,12 @@ func main() {
 		log.Printf("FATAL:  %v", err)
 		os.Exit(2)
 	}
+	log.Printf("INFO: Configuration - God: %#v", cfg.God)
+	log.Printf("INFO: Configuration - Tool: %#v", cfg.Tool)
+	log.Printf("INFO: Configuration - DB: %#v", cfg.DB)
+	log.Printf("INFO: Configuration - Allow: %#v", cfg.Allow)
+	log.Printf("INFO: Configuration - Size: %d", cfg.Size)
+	log.Printf("INFO: Configuration - Root: %s", cfg.Root)
 
 	pkgs, err := parse.DirTree(cfg.Root)
 	if err != nil {
@@ -32,15 +36,15 @@ func main() {
 
 	var errs []error
 	rootPkg := parse.RootPkg(pkgs)
-	fmt.Printf("INFO: rootPkg = %q\n", rootPkg)
+	log.Printf("INFO: root package: %q", rootPkg)
 	for _, pkg := range pkgs {
 		errs = addErrors(errs, deps.Check(pkg, rootPkg, cfg))
-		errs = addErrors(errs, size.Check(pkg, rootPkg, cfg.Size))
+		//errs = addErrors(errs, size.Check(pkg, rootPkg, cfg.Size))
 	}
 
 	if len(errs) > 0 {
 		for _, err = range errs {
-			fmt.Printf("ERROR: %v", err)
+			log.Printf("ERROR: %v", err)
 		}
 		os.Exit(1)
 	}

@@ -1,4 +1,4 @@
-package toolpkg
+package pkgs
 
 import (
 	"strings"

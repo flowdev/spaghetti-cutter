@@ -4,39 +4,25 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/flowdev/spaghetti-cutter/config"
-	"github.com/flowdev/spaghetti-cutter/x/toolpkg"
+	"github.com/flowdev/spaghetti-cutter/x/config"
+	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 	"golang.org/x/tools/go/packages"
 )
 
 // Check checks the dependencies of the given package and reports offending
 // imports.
 func Check(pkg *packages.Package, rootPkg string, cfg config.Config) []error {
-	relPkg := toolpkg.RelativePackageName(pkg, rootPkg)
-	if relPkg == "main" {
-		//fmt.Println("Dependency configuration:")
-		//fmt.Println("    Tool:", cfg.Tool)
-		//fmt.Println("    DB:", cfg.DB)
-		//fmt.Println("    God:", cfg.God)
-		//fmt.Println("    Allow:", cfg.Allow)
-	}
-
-	//fmt.Println(pkg.Name, pkg.PkgPath)
-	//fmt.Println("relPkg:", relPkg)
+	relPkg := pkgs.RelativePackageName(pkg, rootPkg)
 
 	if _, ok := cfg.Tool[relPkg]; ok {
-		//fmt.Println("Check tool package")
 		return checkPkg(pkg, relPkg, rootPkg, cfg, checkTool)
 	}
 	if _, ok := cfg.DB[relPkg]; ok {
-		//fmt.Println("Check DB package")
 		return checkPkg(pkg, relPkg, rootPkg, cfg, checkDB)
 	}
 	if _, ok := cfg.God[relPkg]; ok {
-		//fmt.Println("Check god package")
 		return nil // God packages can't have a problem by definition
 	}
-	//fmt.Println("Check standard package")
 	return checkPkg(pkg, relPkg, rootPkg, cfg, checkStandard)
 }
 
@@ -46,12 +32,10 @@ func checkPkg(
 	cfg config.Config,
 	checkSpecial func(string, string, config.Config) error,
 ) (errs []error) {
-	//fmt.Println("Imports of:", relPkg)
-	//for imp, p := range pkg.Imports {
 	for _, p := range pkg.Imports {
 		if strings.HasPrefix(p.PkgPath, rootPkg) {
-			relImp := toolpkg.RelativePackageName(p, rootPkg)
-			//fmt.Println(relImp, imp, p.ID, p.Name, p.PkgPath)
+			relImp := pkgs.RelativePackageName(p, rootPkg)
+			fmt.Println(relImp, p.Name, p.PkgPath)
 
 			// check in allow first:
 			if allowed, ok := cfg.Allow[relPkg]; ok {
@@ -65,7 +49,7 @@ func checkPkg(
 			}
 		}
 	}
-	return nil
+	return errs
 }
 
 func checkTool(relPkg, relImp string, cfg config.Config) error {

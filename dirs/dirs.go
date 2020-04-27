@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/flowdev/spaghetti-cutter/config"
+	"github.com/flowdev/spaghetti-cutter/x/config"
 )
 
 // FindRoot finds the root of a project.
