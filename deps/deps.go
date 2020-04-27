@@ -5,39 +5,38 @@ import (
 	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/config"
+	"github.com/flowdev/spaghetti-cutter/x/toolpkg"
 	"golang.org/x/tools/go/packages"
 )
-
-const pkgMain = "main"
 
 // Check checks the dependencies of the given package and reports offending
 // imports.
 func Check(pkg *packages.Package, rootPkg string, cfg config.Config) []error {
-	relPkg := relativePkg(pkg, rootPkg)
-	if relPkg == pkgMain {
-		fmt.Println("Dependency configuration:")
-		fmt.Println("    Tool:", cfg.Tool)
-		fmt.Println("    DB:", cfg.DB)
-		fmt.Println("    God:", cfg.God)
-		fmt.Println("    Allow:", cfg.Allow)
+	relPkg := toolpkg.RelativePackageName(pkg, rootPkg)
+	if relPkg == "main" {
+		//fmt.Println("Dependency configuration:")
+		//fmt.Println("    Tool:", cfg.Tool)
+		//fmt.Println("    DB:", cfg.DB)
+		//fmt.Println("    God:", cfg.God)
+		//fmt.Println("    Allow:", cfg.Allow)
 	}
 
-	fmt.Println(pkg.ID, pkg.Name, pkg.PkgPath)
-	fmt.Println("relPkg:", relPkg)
+	//fmt.Println(pkg.Name, pkg.PkgPath)
+	//fmt.Println("relPkg:", relPkg)
 
 	if _, ok := cfg.Tool[relPkg]; ok {
-		fmt.Println("Check tool package")
+		//fmt.Println("Check tool package")
 		return checkPkg(pkg, relPkg, rootPkg, cfg, checkTool)
 	}
 	if _, ok := cfg.DB[relPkg]; ok {
-		fmt.Println("Check DB package")
+		//fmt.Println("Check DB package")
 		return checkPkg(pkg, relPkg, rootPkg, cfg, checkDB)
 	}
 	if _, ok := cfg.God[relPkg]; ok {
-		fmt.Println("Check god package")
+		//fmt.Println("Check god package")
 		return nil // God packages can't have a problem by definition
 	}
-	fmt.Println("Check standard package")
+	//fmt.Println("Check standard package")
 	return checkPkg(pkg, relPkg, rootPkg, cfg, checkStandard)
 }
 
@@ -47,11 +46,12 @@ func checkPkg(
 	cfg config.Config,
 	checkSpecial func(string, string, config.Config) error,
 ) (errs []error) {
-	fmt.Println("Imports of:", relPkg)
-	for imp, p := range pkg.Imports {
+	//fmt.Println("Imports of:", relPkg)
+	//for imp, p := range pkg.Imports {
+	for _, p := range pkg.Imports {
 		if strings.HasPrefix(p.PkgPath, rootPkg) {
-			relImp := relativePkg(p, rootPkg)
-			fmt.Println(relImp, imp, p.ID, p.Name, p.PkgPath)
+			relImp := toolpkg.RelativePackageName(p, rootPkg)
+			//fmt.Println(relImp, imp, p.ID, p.Name, p.PkgPath)
 
 			// check in allow first:
 			if allowed, ok := cfg.Allow[relPkg]; ok {
@@ -102,18 +102,4 @@ func checkStandard(relPkg, relImp string, cfg config.Config) error {
 			relPkg, relImp)
 	}
 	return nil
-}
-
-// relativePkg return the relative package towards the given root package.
-// It can be `/`, `main` or a path line `pkg/x/mytool`.
-func relativePkg(pkg *packages.Package, rootPkg string) string {
-	relPkg := pkg.PkgPath[len(rootPkg):]
-	if pkg.Name == pkgMain {
-		return pkgMain
-	} else if relPkg == "" {
-		return "/"
-	} else if relPkg[0] == '/' {
-		return relPkg[1:]
-	}
-	return relPkg
 }
