@@ -3,6 +3,7 @@ package size
 import (
 	"fmt"
 	"go/ast"
+	"log"
 
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 	"golang.org/x/tools/go/packages"
@@ -11,6 +12,9 @@ import (
 // Check checks the complexity of the given package and reports if it is too
 // big.
 func Check(pkg *packages.Package, rootPkg string, maxSize uint) []error {
+	if pkgs.IsTestPackage(pkg) {
+		return nil
+	}
 	relPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	fmt.Println("Complexity configuration - Size:", maxSize)
 	fmt.Println("Package:", relPkg, pkg.Name, pkg.PkgPath)
@@ -19,8 +23,8 @@ func Check(pkg *packages.Package, rootPkg string, maxSize uint) []error {
 	for _, astf := range pkg.Syntax {
 		realSize += sizeOfFile(astf)
 	}
-	fmt.Println("Size of package:", relPkg, realSize)
-			log.Printf("ERROR: %v\n", err)
+	log.Printf("INFO - Size of package '%s': %d\n", relPkg, realSize)
+
 	if realSize > maxSize {
 		return []error{
 			fmt.Errorf("the maximum size for package '%s' is %d but it's real size is: %d",

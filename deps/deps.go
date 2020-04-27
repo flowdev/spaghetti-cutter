@@ -53,7 +53,7 @@ func checkPkg(
 }
 
 func checkTool(relPkg, relImp string, cfg config.Config) error {
-	if !strings.HasPrefix(relImp, relPkg) {
+	if !isSubPackage(relImp, relPkg) {
 		return fmt.Errorf("tool package '%s' isn't allowed to import package '%s'",
 			relPkg, relImp)
 	}
@@ -67,7 +67,7 @@ func checkDB(relPkg, relImp string, cfg config.Config) error {
 	if _, ok := cfg.DB[relImp]; ok {
 		return nil
 	}
-	if !strings.HasPrefix(relImp, relPkg) {
+	if !isSubPackage(relImp, relPkg) {
 		return fmt.Errorf("DB package '%s' isn't allowed to import package '%s'",
 			relPkg, relImp)
 	}
@@ -81,9 +81,17 @@ func checkStandard(relPkg, relImp string, cfg config.Config) error {
 	if _, ok := cfg.DB[relImp]; ok {
 		return nil
 	}
-	if !strings.HasPrefix(relImp, relPkg) {
+	if !isSubPackage(relImp, relPkg) {
 		return fmt.Errorf("package '%s' isn't allowed to import package '%s'",
 			relPkg, relImp)
 	}
 	return nil
+}
+
+func isSubPackage(relImp, relPkg string) bool {
+	pkg := relPkg
+	if strings.HasSuffix(pkg, "_test") {
+		pkg = pkg[:len(pkg)-5]
+	}
+	return strings.HasPrefix(relImp, pkg)
 }

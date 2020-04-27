@@ -127,7 +127,7 @@ func Parse(args []string) Config {
 		ff.WithConfigFileParser(ff.JSONParser),
 	)
 	if err != nil {
-		log.Fatalf("FATAL: Unable to parse command line arguments or configuration file: %v", err)
+		log.Fatalf("FATAL - Unable to parse command line arguments or configuration file: %v", err)
 	}
 
 	//fmt.Println("Parsed config:", cfg)

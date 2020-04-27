@@ -53,7 +53,7 @@ func findGoModDir() string {
 func getOutputOfCmd(cmd string, args ...string) string {
 	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
-		log.Fatalf("FATAL: Unable to execute command: %v", err)
+		log.Fatalf("FATAL - Unable to execute command: %v", err)
 	}
 	return strings.TrimRight(string(out), "\r\n")
 }
@@ -61,7 +61,7 @@ func getOutputOfCmd(cmd string, args ...string) string {
 func crawlUpAndFindDirOf(file, startDir string) string {
 	absDir, err := filepath.Abs(startDir)
 	if err != nil {
-		log.Fatalf("FATAL: Unable to find absolute directory (for %s): %v", startDir, err)
+		log.Fatalf("FATAL - Unable to find absolute directory (for %s): %v", startDir, err)
 	}
 	volName := filepath.VolumeName(absDir)
 	oldDir := "" // set to impossible value first!

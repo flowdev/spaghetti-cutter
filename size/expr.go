@@ -11,7 +11,7 @@ func sizeOfExpr(expr ast.Expr) uint {
 	switch e := expr.(type) {
 	case *ast.BasicLit:
 		size = sizeOfBasicLit(e)
-		//fmt.Println("Size of basic expr:", size)
+		fmt.Println("Size of basic expr:", size)
 	case *ast.CompositeLit:
 		size = sizeOfCompositeLit(e)
 		fmt.Println("Size of composite expr:", size)

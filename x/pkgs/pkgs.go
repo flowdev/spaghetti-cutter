@@ -1,6 +1,7 @@
 package pkgs
 
 import (
+	"fmt"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -24,4 +25,13 @@ func RelativePackageName(pkg *packages.Package, rootPkg string) string {
 		return relPkg[1:]
 	}
 	return relPkg
+}
+
+// IsTestPackage returns true if the given package is a test package and false
+// otherwise.
+func IsTestPackage(pkg *packages.Package) bool {
+	result := strings.HasSuffix(pkg.PkgPath, "_test") ||
+		strings.HasSuffix(pkg.PkgPath, ".test")
+	fmt.Println("Test package?", result, pkg.Name, pkg.PkgPath)
+	return result
 }
