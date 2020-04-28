@@ -22,10 +22,10 @@ func main() {
 		log.Printf("FATAL -  %v", err)
 		os.Exit(2)
 	}
-	log.Printf("INFO - configuration God: %#v", cfg.God)
-	log.Printf("INFO - configuration Tool: %#v", cfg.Tool)
-	log.Printf("INFO - configuration DB: %#v", cfg.DB)
-	log.Printf("INFO - configuration Allow: %#v", cfg.Allow)
+	log.Printf("INFO - configuration God: %s", &cfg.God)
+	log.Printf("INFO - configuration Tool: %s", &cfg.Tool)
+	log.Printf("INFO - configuration DB: %s", &cfg.DB)
+	log.Printf("INFO - configuration Allow: %s", &cfg.Allow)
 	log.Printf("INFO - configuration Size: %d", cfg.Size)
 	log.Printf("INFO - configuration Root: %s", cfg.Root)
 
