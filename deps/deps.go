@@ -14,13 +14,13 @@ import (
 func Check(pkg *packages.Package, rootPkg string, cfg config.Config) []error {
 	relPkg := pkgs.RelativePackageName(pkg, rootPkg)
 
-	if _, ok := cfg.Tool[relPkg]; ok {
+	if isPackageInList(cfg.Tool, relPkg) {
 		return checkPkg(pkg, relPkg, rootPkg, cfg, checkTool)
 	}
-	if _, ok := cfg.DB[relPkg]; ok {
+	if isPackageInList(cfg.DB, relPkg) {
 		return checkPkg(pkg, relPkg, rootPkg, cfg, checkDB)
 	}
-	if _, ok := cfg.God[relPkg]; ok {
+	if isPackageInList(cfg.God, relPkg) {
 		return nil // God packages can't have a problem by definition
 	}
 	return checkPkg(pkg, relPkg, rootPkg, cfg, checkStandard)
@@ -38,9 +38,11 @@ func checkPkg(
 			fmt.Println(relImp, p.Name, p.PkgPath)
 
 			// check in allow first:
-			if allowed, ok := cfg.Allow[relPkg]; ok {
-				if _, ok = allowed[relImp]; ok {
-					continue // this import is fine
+			for _, group := range cfg.Allow {
+				if group.Left.Regexp.MatchString(relPkg) {
+					if isPackageInList(*group.Right, relPkg) {
+						continue // this import is fine
+					}
 				}
 			}
 
@@ -61,10 +63,10 @@ func checkTool(relPkg, relImp string, cfg config.Config) error {
 }
 
 func checkDB(relPkg, relImp string, cfg config.Config) error {
-	if _, ok := cfg.Tool[relImp]; ok {
+	if isPackageInList(cfg.Tool, relImp) {
 		return nil
 	}
-	if _, ok := cfg.DB[relImp]; ok {
+	if isPackageInList(cfg.DB, relImp) {
 		return nil
 	}
 	if !isSubPackage(relImp, relPkg) {
@@ -75,10 +77,10 @@ func checkDB(relPkg, relImp string, cfg config.Config) error {
 }
 
 func checkStandard(relPkg, relImp string, cfg config.Config) error {
-	if _, ok := cfg.Tool[relImp]; ok {
+	if isPackageInList(cfg.Tool, relImp) {
 		return nil
 	}
-	if _, ok := cfg.DB[relImp]; ok {
+	if isPackageInList(cfg.DB, relImp) {
 		return nil
 	}
 	if !isSubPackage(relImp, relPkg) {
@@ -94,4 +96,13 @@ func isSubPackage(relImp, relPkg string) bool {
 		pkg = pkg[:len(pkg)-5]
 	}
 	return strings.HasPrefix(relImp, pkg)
+}
+
+func isPackageInList(pl config.PatternList, pkg string) bool {
+	for _, p := range pl {
+		if p.Regexp.MatchString(pkg) {
+			return true
+		}
+	}
+	return false
 }

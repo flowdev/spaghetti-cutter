@@ -15,7 +15,7 @@ func main() {
 	var err error
 
 	cfg := config.Parse(os.Args[1:])
-	cfg.God["main"] = config.Value // the main package can always access everything
+	(&cfg.God).Set("main") // the main package can always access everything
 
 	cfg.Root, err = dirs.FindRoot(cfg.Root)
 	if err != nil {
