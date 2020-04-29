@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/flowdev/spaghetti-cutter/deps"
-	"github.com/flowdev/spaghetti-cutter/dirs"
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/size"
 	"github.com/flowdev/spaghetti-cutter/x/config"
+	"github.com/flowdev/spaghetti-cutter/x/dirs"
 )
 
 func main() {
