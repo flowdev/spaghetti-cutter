@@ -8,9 +8,16 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/flowdev/spaghetti-cutter/x/config"
 )
+
+// FindConfig finds the .spaghetti-cutter.json configuration file of a project.
+func FindConfig(cfgFile string) string {
+	dir := crawlUpAndFindDirOf(cfgFile, ".")
+	if dir != "" {
+		return filepath.Join(dir, cfgFile)
+	}
+	return ""
+}
 
 // FindRoot finds the root of a project.
 // It looks at the following things (highest priority first):
@@ -18,7 +25,7 @@ import (
 // - It looks for go.mod via `go env GOMOD`
 // - It looks for the configuration file: .spaghetti-cutter.json
 // - It looks for a `vendor` directory.
-func FindRoot(dir string) (string, error) {
+func FindRoot(dir string, cfgFile string) (string, error) {
 	if dir != "" {
 		return dir, nil
 	}
@@ -28,7 +35,7 @@ func FindRoot(dir string) (string, error) {
 		return dir, nil
 	}
 
-	dir = crawlUpAndFindDirOf(config.File, ".")
+	dir = crawlUpAndFindDirOf(cfgFile, ".")
 	if dir != "" {
 		return dir, nil
 	}

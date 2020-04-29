@@ -12,14 +12,18 @@ import (
 )
 
 func main() {
+	cut(os.Args[1:])
+}
+
+func cut(args []string) {
 	var err error
 
-	cfg := config.Parse(os.Args[1:])
+	cfg := config.Parse(args, dirs.FindConfig(config.File))
 	(&cfg.God).Set("main") // the main package can always access everything
 
-	cfg.Root, err = dirs.FindRoot(cfg.Root)
+	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File)
 	if err != nil {
-		log.Printf("FATAL -  %v", err)
+		log.Printf("FATAL - %v", err)
 		os.Exit(2)
 	}
 	log.Printf("INFO - configuration God: %s", &cfg.God)

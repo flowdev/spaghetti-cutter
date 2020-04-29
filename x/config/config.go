@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 
@@ -141,7 +140,7 @@ type Config struct {
 }
 
 // Parse parses command line arguments and configuration file
-func Parse(args []string) Config {
+func Parse(args []string, cfgFile string) Config {
 	const (
 		usageAllow = "allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')"
 		usageTool  = "tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/'"
@@ -166,11 +165,13 @@ func Parse(args []string) Config {
 	fs.StringVar(&cfg.Root, "root", "", usageRoot)
 	fs.UintVar(&cfg.Size, "size", defaultSize, usageSize)
 
-	err := ff.Parse(fs, os.Args[1:],
+	ffOpts := []ff.Option{
 		ff.WithEnvVarPrefix("SPAGHETTI_CUTTER"),
-		ff.WithConfigFile(File),
-		ff.WithConfigFileParser(ff.JSONParser),
-	)
+	}
+	if cfgFile != "" {
+		ffOpts = append(ffOpts, ff.WithConfigFile(cfgFile), ff.WithConfigFileParser(ff.JSONParser))
+	}
+	err := ff.Parse(fs, args, ffOpts...)
 	if err != nil {
 		log.Fatalf("FATAL - Unable to parse command line arguments or configuration file: %v", err)
 	}
