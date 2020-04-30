@@ -1,4 +1,4 @@
 {
-	"tool": ["x/config", "x/pkgs"],
+	"tool": "x/*",
 	"size": 1024
 }

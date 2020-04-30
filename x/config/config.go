@@ -135,6 +135,7 @@ type Config struct {
 	Tool  PatternList
 	DB    PatternList
 	God   PatternList
+	NoGod bool
 	Root  string
 	Size  uint
 }
@@ -146,7 +147,8 @@ func Parse(args []string, cfgFile string) Config {
 		usageTool  = "tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/'"
 		usageDB    = "common domain/database package (can only depend on tools) " +
 			"(e.g. 'pkg/*/db'; '*' matches anything except for a '/')"
-		usageGod    = "god package that can see everything (package 'main' is always god)"
+		usageGod    = "god package that can see everything (default: 'main')"
+		usageNoGod  = "override default: 'main' won't be implicit god package"
 		usageRoot   = "root directory"
 		usageSize   = "maximum size of a package in \"lines\""
 		defaultSize = 4096
@@ -162,6 +164,7 @@ func Parse(args []string, cfgFile string) Config {
 	fs.Var(&cfg.Tool, "tool", usageTool)
 	fs.Var(&cfg.DB, "db", usageDB)
 	fs.Var(&cfg.God, "god", usageGod)
+	fs.BoolVar(&cfg.NoGod, "no-god", false, usageNoGod)
 	fs.StringVar(&cfg.Root, "root", "", usageRoot)
 	fs.UintVar(&cfg.Size, "size", defaultSize, usageSize)
 

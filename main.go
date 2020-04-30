@@ -19,7 +19,9 @@ func cut(args []string) {
 	var err error
 
 	cfg := config.Parse(args, dirs.FindConfig(config.File))
-	(&cfg.God).Set("main") // the main package can always access everything
+	if !cfg.NoGod && len(cfg.God) == 0 {
+		(&cfg.God).Set("main") // default
+	}
 
 	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File)
 	if err != nil {

@@ -12,41 +12,43 @@ import (
 // Check checks the dependencies of the given package and reports offending
 // imports.
 func Check(pkg *packages.Package, rootPkg string, cfg config.Config) []error {
-	relPkg := pkgs.RelativePackageName(pkg, rootPkg)
+	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 
-	if isPackageInList(cfg.Tool, relPkg) {
-		return checkPkg(pkg, relPkg, rootPkg, cfg, checkTool)
+	if isPackageInList(cfg.Tool, relPkg, strictRelPkg) {
+		return checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkTool)
 	}
-	if isPackageInList(cfg.DB, relPkg) {
-		return checkPkg(pkg, relPkg, rootPkg, cfg, checkDB)
+	if isPackageInList(cfg.DB, relPkg, strictRelPkg) {
+		return checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkDB)
 	}
-	if isPackageInList(cfg.God, relPkg) {
+	if isPackageInList(cfg.God, relPkg, strictRelPkg) {
 		return nil // God packages can't have a problem by definition
 	}
-	return checkPkg(pkg, relPkg, rootPkg, cfg, checkStandard)
+	return checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkStandard)
 }
 
 func checkPkg(
 	pkg *packages.Package,
-	relPkg, rootPkg string,
+	relPkg, strictRelPkg, rootPkg string,
 	cfg config.Config,
-	checkSpecial func(string, string, config.Config) error,
+	checkSpecial func(string, string, string, string, config.Config) error,
 ) (errs []error) {
 	for _, p := range pkg.Imports {
 		if strings.HasPrefix(p.PkgPath, rootPkg) {
-			relImp := pkgs.RelativePackageName(p, rootPkg)
-			fmt.Println(relImp, p.Name, p.PkgPath)
+			relImp, strictRelImp := pkgs.RelativePackageName(p, rootPkg)
+			fmt.Println("checkPkg - imp:", relImp, strictRelImp, p.Name, p.PkgPath)
 
 			// check in allow first:
 			for _, group := range cfg.Allow {
-				if group.Left.Regexp.MatchString(relPkg) {
-					if isPackageInList(*group.Right, relPkg) {
+				if group.Left.Regexp.MatchString(relPkg) ||
+					(strictRelPkg != "" && group.Left.Regexp.MatchString(strictRelPkg)) {
+
+					if isPackageInList(*group.Right, relPkg, strictRelImp) {
 						continue // this import is fine
 					}
 				}
 			}
 
-			if err := checkSpecial(relPkg, relImp, cfg); err != nil {
+			if err := checkSpecial(relPkg, strictRelPkg, relImp, strictRelImp, cfg); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -54,53 +56,66 @@ func checkPkg(
 	return errs
 }
 
-func checkTool(relPkg, relImp string, cfg config.Config) error {
-	if !isSubPackage(relImp, relPkg) {
+func checkTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if !isSubPackage(relImp, strictRelImp, relPkg, strictRelPkg) {
 		return fmt.Errorf("tool package '%s' isn't allowed to import package '%s'",
-			relPkg, relImp)
+			pkgs.UniquePackageName(relPkg, strictRelPkg),
+			pkgs.UniquePackageName(relImp, strictRelImp))
 	}
 	return nil
 }
 
-func checkDB(relPkg, relImp string, cfg config.Config) error {
-	if isPackageInList(cfg.Tool, relImp) {
+func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if isPackageInList(cfg.Tool, relImp, strictRelImp) {
 		return nil
 	}
-	if isPackageInList(cfg.DB, relImp) {
+	if isPackageInList(cfg.DB, relImp, strictRelImp) {
 		return nil
 	}
-	if !isSubPackage(relImp, relPkg) {
+	if !isSubPackage(relImp, strictRelImp, relPkg, strictRelPkg) {
 		return fmt.Errorf("DB package '%s' isn't allowed to import package '%s'",
-			relPkg, relImp)
+			pkgs.UniquePackageName(relPkg, strictRelPkg),
+			pkgs.UniquePackageName(relImp, strictRelImp))
 	}
 	return nil
 }
 
-func checkStandard(relPkg, relImp string, cfg config.Config) error {
-	if isPackageInList(cfg.Tool, relImp) {
+func checkStandard(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if isPackageInList(cfg.Tool, relImp, strictRelImp) {
 		return nil
 	}
-	if isPackageInList(cfg.DB, relImp) {
+	if isPackageInList(cfg.DB, relImp, strictRelImp) {
 		return nil
 	}
-	if !isSubPackage(relImp, relPkg) {
+	if !isSubPackage(relImp, strictRelImp, relPkg, strictRelPkg) {
 		return fmt.Errorf("package '%s' isn't allowed to import package '%s'",
-			relPkg, relImp)
+			pkgs.UniquePackageName(relPkg, strictRelPkg),
+			pkgs.UniquePackageName(relImp, strictRelImp))
 	}
 	return nil
 }
 
-func isSubPackage(relImp, relPkg string) bool {
-	pkg := relPkg
+func isSubPackage(relImp, strictRelImp, relPkg, strictRelPkg string) bool {
+	pkg := strictRelPkg
+	if pkg == "" {
+		pkg = relPkg
+	}
 	if strings.HasSuffix(pkg, "_test") {
 		pkg = pkg[:len(pkg)-5]
 	}
-	return strings.HasPrefix(relImp, pkg)
+
+	imp := strictRelImp
+	if imp == "" {
+		imp = relImp
+	}
+	return strings.HasPrefix(imp, pkg)
 }
 
-func isPackageInList(pl config.PatternList, pkg string) bool {
+func isPackageInList(pl config.PatternList, pkg, strictPkg string) bool {
 	for _, p := range pl {
-		if p.Regexp.MatchString(pkg) {
+		if p.Regexp.MatchString(pkg) ||
+			(strictPkg != "" && p.Regexp.MatchString(strictPkg)) {
+
 			return true
 		}
 	}

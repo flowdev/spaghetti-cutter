@@ -15,9 +15,10 @@ func Check(pkg *packages.Package, rootPkg string, maxSize uint) []error {
 	if pkgs.IsTestPackage(pkg) {
 		return nil
 	}
-	relPkg := pkgs.RelativePackageName(pkg, rootPkg)
+	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
+	uniqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
 	fmt.Println("Complexity configuration - Size:", maxSize)
-	fmt.Println("Package:", relPkg, pkg.Name, pkg.PkgPath)
+	fmt.Println("Package:", uniqPkg)
 
 	var realSize uint
 	for _, astf := range pkg.Syntax {
@@ -28,7 +29,7 @@ func Check(pkg *packages.Package, rootPkg string, maxSize uint) []error {
 	if realSize > maxSize {
 		return []error{
 			fmt.Errorf("the maximum size for package '%s' is %d but it's real size is: %d",
-				relPkg, maxSize, realSize),
+				uniqPkg, maxSize, realSize),
 		}
 	}
 	return nil
