@@ -1,0 +1,8 @@
+{
+	"allow": ["a b", "c d"],
+	"db": ["pkg/db", "pkg/entities"],
+	"god": ["main", "pkg/service"],
+	"root": "dir/bla",
+	"size": 3072,
+	"no-god": true
+}

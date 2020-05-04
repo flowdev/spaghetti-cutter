@@ -22,12 +22,16 @@ func FindConfig(cfgFile string) string {
 // - It looks for go.mod via `go env GOMOD`
 // - It looks for the configuration file: .spaghetti-cutter.json
 // - It looks for a `vendor` directory.
-func FindRoot(dir string, cfgFile string) (string, error) {
+func FindRoot(dir string, cfgFile string, ignoreVendor bool) (string, error) {
 	if dir != "" {
 		return dir, nil
 	}
 
-	dir = crawlUpAndFindDirOf(".", "go.mod", cfgFile, "vendor")
+	if ignoreVendor {
+		dir = crawlUpAndFindDirOf(".", "go.mod", cfgFile)
+	} else {
+		dir = crawlUpAndFindDirOf(".", "go.mod", cfgFile, "vendor")
+	}
 	if dir == "" {
 		absDir, _ := filepath.Abs(".") // we checked this just inside of crawlUpAndFindDirOf()
 		return "", fmt.Errorf("unable to find root directory for: %s", absDir)

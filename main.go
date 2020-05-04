@@ -23,7 +23,7 @@ func cut(args []string) {
 		(&cfg.God).Set("main") // default
 	}
 
-	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File)
+	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File, cfg.IgnoreVendor)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
 		os.Exit(2)

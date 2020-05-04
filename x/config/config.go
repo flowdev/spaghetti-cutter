@@ -63,6 +63,17 @@ func (pl *PatternList) String() string {
 	return b.String()
 }
 
+// MatchString returns true if any of the patterns in the pattern list matches
+// the given string and false otherwise.
+func (pl *PatternList) MatchString(s string) bool {
+	for _, p := range *pl {
+		if p.Regexp.MatchString(s) {
+			return true
+		}
+	}
+	return false
+}
+
 // PatternGroup groups a parent/left pattern with a list of children/right
 // patterns.
 type PatternGroup struct {
@@ -107,7 +118,9 @@ func (pm *PatternMap) String() string {
 	}
 	var b strings.Builder
 	for left, group := range *pm {
+		b.WriteString("`")
 		b.WriteString(left)
+		b.WriteString("`")
 		b.WriteString(": ")
 		b.WriteString(group.Right.String())
 		b.WriteString(" ; ")
@@ -131,13 +144,14 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 
 // Config contains the parsed configuration.
 type Config struct {
-	Allow PatternMap
-	Tool  PatternList
-	DB    PatternList
-	God   PatternList
-	NoGod bool
-	Root  string
-	Size  uint
+	Allow        *PatternMap
+	Tool         *PatternList
+	DB           *PatternList
+	God          *PatternList
+	Root         string
+	Size         uint
+	NoGod        bool
+	IgnoreVendor bool
 }
 
 // Parse parses command line arguments and configuration file
@@ -147,26 +161,29 @@ func Parse(args []string, cfgFile string) Config {
 		usageTool  = "tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/'"
 		usageDB    = "common domain/database package (can only depend on tools) " +
 			"(e.g. 'pkg/*/db'; '*' matches anything except for a '/')"
-		usageGod    = "god package that can see everything (default: 'main')"
-		usageNoGod  = "override default: 'main' won't be implicit god package"
-		usageRoot   = "root directory"
-		usageSize   = "maximum size of a package in \"lines\""
-		defaultSize = 4096
+		usageGod          = "god package that can see everything (default: 'main')"
+		usageNoGod        = "override default: 'main' won't be implicit god package"
+		usageRoot         = "root directory"
+		usageSize         = "maximum size of a package in \"lines\""
+		usageIgnoreVendor = "ignore any 'vendor' directory when searching the project root"
+		defaultSize       = 2048
 	)
-	cfg := Config{
-		Allow: make(map[string]PatternGroup),
-		Tool:  make([]Pattern, 0, 16),
-		DB:    make([]Pattern, 0, 16),
-		God:   make([]Pattern, 0, 16),
-	}
+
+	allow := PatternMap(make(map[string]PatternGroup))
+	tool := PatternList(make([]Pattern, 0, 16))
+	db := PatternList(make([]Pattern, 0, 16))
+	god := PatternList(make([]Pattern, 0, 16))
+	cfg := Config{Allow: &allow, Tool: &tool, DB: &db, God: &god}
+
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
-	fs.Var(&cfg.Allow, "allow", usageAllow)
-	fs.Var(&cfg.Tool, "tool", usageTool)
-	fs.Var(&cfg.DB, "db", usageDB)
-	fs.Var(&cfg.God, "god", usageGod)
+	fs.Var(cfg.Allow, "allow", usageAllow)
+	fs.Var(cfg.Tool, "tool", usageTool)
+	fs.Var(cfg.DB, "db", usageDB)
+	fs.Var(cfg.God, "god", usageGod)
 	fs.BoolVar(&cfg.NoGod, "no-god", false, usageNoGod)
 	fs.StringVar(&cfg.Root, "root", "", usageRoot)
 	fs.UintVar(&cfg.Size, "size", defaultSize, usageSize)
+	fs.BoolVar(&cfg.IgnoreVendor, "ignore-vendor", false, usageIgnoreVendor)
 
 	ffOpts := []ff.Option{
 		ff.WithEnvVarPrefix("SPAGHETTI_CUTTER"),

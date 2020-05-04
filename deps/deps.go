@@ -38,11 +38,11 @@ func checkPkg(
 			fmt.Println("checkPkg - imp:", relImp, strictRelImp, p.Name, p.PkgPath)
 
 			// check in allow first:
-			for _, group := range cfg.Allow {
+			for _, group := range *cfg.Allow {
 				if group.Left.Regexp.MatchString(relPkg) ||
 					(strictRelPkg != "" && group.Left.Regexp.MatchString(strictRelPkg)) {
 
-					if isPackageInList(*group.Right, relPkg, strictRelImp) {
+					if isPackageInList(group.Right, relPkg, strictRelImp) {
 						continue // this import is fine
 					}
 				}
@@ -111,13 +111,9 @@ func isSubPackage(relImp, strictRelImp, relPkg, strictRelPkg string) bool {
 	return strings.HasPrefix(imp, pkg)
 }
 
-func isPackageInList(pl config.PatternList, pkg, strictPkg string) bool {
-	for _, p := range pl {
-		if p.Regexp.MatchString(pkg) ||
-			(strictPkg != "" && p.Regexp.MatchString(strictPkg)) {
-
-			return true
-		}
+func isPackageInList(pl *config.PatternList, pkg, strictPkg string) bool {
+	if strictPkg != "" && pl.MatchString(strictPkg) {
+		return true
 	}
-	return false
+	return pl.MatchString(pkg)
 }

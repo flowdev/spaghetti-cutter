@@ -53,27 +53,37 @@ func TestFindRoot(t *testing.T) {
 	testDataDir := mustAbs(filepath.Join("testdata", "find-root"))
 	givenStartDir := filepath.Join("in", "some", "subdir")
 	specs := []struct {
-		name         string
-		givenRoot    string
-		expectedRoot string
-		expectedErr  bool
+		name              string
+		givenRoot         string
+		givenIgnoreVendor bool
+		expectedRoot      string
+		expectedErr       bool
 	}{
 		{
-			name:         "go-mod",
-			givenRoot:    "",
-			expectedRoot: filepath.Join(testDataDir, "go-mod"),
+			name:              "go-mod",
+			givenRoot:         "",
+			givenIgnoreVendor: false,
+			expectedRoot:      filepath.Join(testDataDir, "go-mod"),
 		}, {
-			name:         "given-root",
-			givenRoot:    "/my/given/root/dir",
-			expectedRoot: "/my/given/root/dir",
+			name:              "given-root",
+			givenRoot:         "/my/given/root/dir",
+			givenIgnoreVendor: false,
+			expectedRoot:      "/my/given/root/dir",
 		}, {
-			name:         "config-file",
-			givenRoot:    "",
-			expectedRoot: filepath.Join(testDataDir, "config-file"),
+			name:              "config-file",
+			givenRoot:         "",
+			givenIgnoreVendor: false,
+			expectedRoot:      filepath.Join(testDataDir, "config-file"),
 		}, {
-			name:         "vendor-dir",
-			givenRoot:    "",
-			expectedRoot: filepath.Join(testDataDir, "vendor-dir"),
+			name:              "vendor-dir",
+			givenRoot:         "",
+			givenIgnoreVendor: false,
+			expectedRoot:      filepath.Join(testDataDir, "vendor-dir"),
+		}, {
+			name:              "ignore-vendor",
+			givenRoot:         "",
+			givenIgnoreVendor: true,
+			expectedRoot:      filepath.Join(testDataDir, "ignore-vendor"),
 		},
 	}
 
@@ -85,7 +95,7 @@ func TestFindRoot(t *testing.T) {
 		t.Run(spec.name, func(t *testing.T) {
 			mustChdir(filepath.Join(testDataDir, spec.name, givenStartDir))
 
-			actualRoot, err := dirs.FindRoot(spec.givenRoot, testFile)
+			actualRoot, err := dirs.FindRoot(spec.givenRoot, testFile, spec.givenIgnoreVendor)
 			if err != nil {
 				t.Fatalf("expected no error but got: %v", err)
 			}

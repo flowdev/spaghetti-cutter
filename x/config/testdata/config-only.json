@@ -1,0 +1,9 @@
+{
+	"allow": "a b",
+	"tool": "x/**",
+	"db": "pkg/db/*",
+	"god": "main",
+	"root": "dir/bla",
+	"size": 3072,
+	"ignore-vendor": true
+}
