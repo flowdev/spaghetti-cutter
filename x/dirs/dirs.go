@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
-	"path"
 	"path/filepath"
-	"strings"
 )
 
 // FindConfig finds the .spaghetti-cutter.json configuration file of a project.
 func FindConfig(cfgFile string) string {
-	dir := crawlUpAndFindDirOf(cfgFile, ".")
+	dir := crawlUpAndFindDirOf(".", cfgFile)
 	if dir != "" {
 		return filepath.Join(dir, cfgFile)
 	}
@@ -30,17 +27,7 @@ func FindRoot(dir string, cfgFile string) (string, error) {
 		return dir, nil
 	}
 
-	dir = findGoModDir()
-	if dir != "" {
-		return dir, nil
-	}
-
-	dir = crawlUpAndFindDirOf(cfgFile, ".")
-	if dir != "" {
-		return dir, nil
-	}
-
-	dir = crawlUpAndFindDirOf("vendor", ".")
+	dir = crawlUpAndFindDirOf(".", "go.mod", cfgFile, "vendor")
 	if dir == "" {
 		absDir, _ := filepath.Abs(".") // we checked this just inside of crawlUpAndFindDirOf()
 		return "", fmt.Errorf("unable to find root directory for: %s", absDir)
@@ -49,23 +36,7 @@ func FindRoot(dir string, cfgFile string) (string, error) {
 	return dir, nil
 }
 
-func findGoModDir() string {
-	gomod := getOutputOfCmd("go", "env", "GOMOD")
-	if gomod == os.DevNull || gomod == "" {
-		return ""
-	}
-	return path.Dir(gomod)
-}
-
-func getOutputOfCmd(cmd string, args ...string) string {
-	out, err := exec.Command(cmd, args...).Output()
-	if err != nil {
-		log.Fatalf("FATAL - Unable to execute command: %v", err)
-	}
-	return strings.TrimRight(string(out), "\r\n")
-}
-
-func crawlUpAndFindDirOf(file, startDir string) string {
+func crawlUpAndFindDirOf(startDir string, files ...string) string {
 	absDir, err := filepath.Abs(startDir)
 	if err != nil {
 		log.Fatalf("FATAL - Unable to find absolute directory (for %s): %v", startDir, err)
@@ -74,9 +45,11 @@ func crawlUpAndFindDirOf(file, startDir string) string {
 	oldDir := "" // set to impossible value first!
 
 	for ; absDir != volName && absDir != oldDir; absDir = filepath.Dir(absDir) {
-		path := filepath.Join(absDir, file)
-		if _, err = os.Stat(path); err == nil {
-			return absDir
+		for _, file := range files {
+			path := filepath.Join(absDir, file)
+			if _, err = os.Stat(path); err == nil {
+				return absDir
+			}
 		}
 		oldDir = absDir
 	}
