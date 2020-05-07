@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3"
@@ -66,6 +67,9 @@ func (pl *PatternList) String() string {
 // MatchString returns true if any of the patterns in the pattern list matches
 // the given string and false otherwise.
 func (pl *PatternList) MatchString(s string) bool {
+	if pl == nil {
+		return false
+	}
 	for _, p := range *pl {
 		if p.Regexp.MatchString(s) {
 			return true
@@ -116,17 +120,33 @@ func (pm *PatternMap) String() string {
 	if len(*pm) <= 0 {
 		return "....."
 	}
+	keys := make([]string, 0, len(*pm))
+	for k := range *pm {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	var b strings.Builder
-	for left, group := range *pm {
+	for _, left := range keys {
 		b.WriteString("`")
 		b.WriteString(left)
 		b.WriteString("`")
 		b.WriteString(": ")
-		b.WriteString(group.Right.String())
+		b.WriteString((*pm)[left].Right.String())
 		b.WriteString(" ; ")
 	}
 	s := b.String()
 	return s[:len(s)-3]
+}
+
+// MatchingList returns the PatternList if any key of this pattern map matches
+// the given string and nil otherwise.
+func (pm *PatternMap) MatchingList(s string) *PatternList {
+	for _, group := range *pm {
+		if group.Left.Regexp.MatchString(s) {
+			return group.Right
+		}
+	}
+	return nil
 }
 
 func regexpForPattern(pattern string) (*regexp.Regexp, error) {
@@ -136,10 +156,29 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 		return nil, errors.New("illegal pattern `" + pattern + "` contains `**` before the end")
 	}
 	if i >= 0 {
-		pattern = pattern[:n2] + ".*"
+		pattern = pattern[:i]
 	}
-	pattern = strings.ReplaceAll(pattern, `*`, `[^/]*`)
-	return regexp.Compile("^" + pattern + "$")
+	b := strings.Builder{}
+	parts := strings.Split(pattern, "*")
+	n := len(parts) - 1
+	for j, s := range parts {
+		if j < n {
+			if len(s) > 0 && s[len(s)-1] == '\\' {
+				b.WriteString(regexp.QuoteMeta(s[:len(s)-1]))
+				b.WriteString("\\*")
+			} else {
+				b.WriteString(regexp.QuoteMeta(s))
+				b.WriteString("[^/]*")
+			}
+		} else {
+			b.WriteString(regexp.QuoteMeta(s))
+		}
+	}
+	if i >= 0 {
+		b.WriteString(".*")
+	}
+	re := "^" + b.String() + "$"
+	return regexp.Compile(re)
 }
 
 // Config contains the parsed configuration.

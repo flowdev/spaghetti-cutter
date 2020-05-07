@@ -38,14 +38,15 @@ func checkPkg(
 			fmt.Println("checkPkg - imp:", relImp, strictRelImp, p.Name, p.PkgPath)
 
 			// check in allow first:
-			for _, group := range *cfg.Allow {
-				if group.Left.Regexp.MatchString(relPkg) ||
-					(strictRelPkg != "" && group.Left.Regexp.MatchString(strictRelPkg)) {
-
-					if isPackageInList(group.Right, relPkg, strictRelImp) {
-						continue // this import is fine
-					}
-				}
+			var pl *config.PatternList
+			if strictRelPkg != "" {
+				pl = cfg.Allow.MatchingList(strictRelPkg)
+			}
+			if pl == nil {
+				pl = cfg.Allow.MatchingList(relPkg)
+			}
+			if isPackageInList(pl, relPkg, strictRelImp) {
+				continue // this import is fine
 			}
 
 			if err := checkSpecial(relPkg, strictRelPkg, relImp, strictRelImp, cfg); err != nil {
