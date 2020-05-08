@@ -19,8 +19,8 @@ func cut(args []string) {
 	var err error
 
 	cfg := config.Parse(args, dirs.FindConfig(config.File))
-	if !cfg.NoGod && len(cfg.God) == 0 {
-		(&cfg.God).Set("main") // default
+	if !cfg.NoGod && len(*cfg.God) == 0 {
+		cfg.God.Set("main") // default
 	}
 
 	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File, cfg.IgnoreVendor)
@@ -28,10 +28,10 @@ func cut(args []string) {
 		log.Printf("FATAL - %v", err)
 		os.Exit(2)
 	}
-	log.Printf("INFO - configuration God: %s", &cfg.God)
-	log.Printf("INFO - configuration Tool: %s", &cfg.Tool)
-	log.Printf("INFO - configuration DB: %s", &cfg.DB)
-	log.Printf("INFO - configuration Allow: %s", &cfg.Allow)
+	log.Printf("INFO - configuration God: %s", cfg.God)
+	log.Printf("INFO - configuration Tool: %s", cfg.Tool)
+	log.Printf("INFO - configuration DB: %s", cfg.DB)
+	log.Printf("INFO - configuration Allow: %s", cfg.Allow)
 	log.Printf("INFO - configuration Size: %d", cfg.Size)
 	log.Printf("INFO - configuration Root: %s", cfg.Root)
 

@@ -95,14 +95,14 @@ func (pm *PatternMap) Set(s string) error {
 	var left, right string
 	_, err := fmt.Sscan(s, &left, &right)
 	if err != nil {
-		return fmt.Errorf("unable to split pattern group '%s' into left and right patterns: %w", s, err)
+		return fmt.Errorf("unable to split pattern group %q into left and right patterns: %w", s, err)
 	}
 
 	group := (*pm)[left]
 	if group == (PatternGroup{}) {
-		re, err := regexpForPattern(s)
+		re, err := regexpForPattern(left)
 		if err != nil {
-			return fmt.Errorf("unable to set left pattern `%s`: %w", s, err)
+			return fmt.Errorf("unable to set left pattern %q: %w", s, err)
 		}
 		list := PatternList(make([]Pattern, 0, 16))
 		group = PatternGroup{

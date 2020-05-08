@@ -45,7 +45,7 @@ func checkPkg(
 			if pl == nil {
 				pl = cfg.Allow.MatchingList(relPkg)
 			}
-			if isPackageInList(pl, relPkg, strictRelImp) {
+			if isPackageInList(pl, relImp, strictRelImp) {
 				continue // this import is fine
 			}
 
