@@ -7,11 +7,9 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// DirTree is parsing the whole directory tree starting at cfg.Root
+// DirTree is parsing the whole directory tree starting at root
 // looking for Go packages and analyzing them.
 func DirTree(root string) ([]*packages.Package, error) {
-	//fmt.Println("Parse root:", root)
-
 	parseCfg := &packages.Config{
 		Logf:  nil, // log.Printf,
 		Dir:   root,
