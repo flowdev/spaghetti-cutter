@@ -2,6 +2,8 @@ package parse_test
 
 import (
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/flowdev/spaghetti-cutter/parse"
@@ -12,44 +14,62 @@ func TestDirTree(t *testing.T) {
 	specs := []struct {
 		name          string
 		givenRoot     string
-		expectedPkgs  []*packages.Package
+		expectedPkgs  string
 		expectedError bool
 	}{
 		{
 			name: "happy-path",
-			expectedPkgs: []*packages.Package{
-				{
-					Name:    "main",
-					PkgPath: "github.com/flowdev/...",
-				},
-			},
+			expectedPkgs: "alltst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst | " +
+				"alltst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst [T] | " +
+				"alltst_test: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst_test [T] | " +
+				"apitst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/apitst | " +
+				"apitst_test: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/apitst_test [T] | " +
+				"main: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path | " +
+				"main: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst.test [T] | " +
+				"main: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/apitst.test [T] | " +
+				"main: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/unittst.test [T] | " +
+				"unittst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/unittst | " +
+				"unittst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/unittst [T]",
 			expectedError: false,
 		}, {
 			name:          "error-path",
-			expectedPkgs:  nil,
+			expectedPkgs:  "",
 			expectedError: true,
 		},
 	}
 
 	for _, spec := range specs {
 		t.Run(spec.name, func(t *testing.T) {
-			actualPkgs, err := parse.DirTree(filepath.Join("testdata", spec.name))
+			actualPkgs, err := parse.DirTree(mustAbs(filepath.Join("testdata", spec.name)))
+			//t.Logf("err: %v, actualPkgs: %#v", err, actualPkgs)
 			if spec.expectedError {
 				if err != nil {
 					t.Logf("received expected error: %v", err)
 				} else {
 					t.Error("expected to receive error but didn't get one")
 				}
+			} else if err != nil {
+				t.Fatalf("received UNexpected error: %v", err)
 			}
-			if len(actualPkgs) != len(spec.expectedPkgs) {
-				t.Errorf("expected parsed packages %v (len=%d), actual %v (len=%d)",
-					spec.expectedPkgs, len(spec.expectedPkgs), actualPkgs, len(actualPkgs))
+			actualPkgsString := packagesAsString(actualPkgs)
+			if actualPkgsString != spec.expectedPkgs {
+				t.Errorf("expected parsed packages %q, actual %q (len=%d)",
+					spec.expectedPkgs, actualPkgsString, len(actualPkgs))
 			}
 		})
 	}
 }
 func packagesAsString(pkgs []*packages.Package) string {
-	return ""
+	strPkgs := make([]string, len(pkgs))
+
+	for i, p := range pkgs {
+		strPkgs[i] = p.Name + ": " + p.PkgPath
+		if isTestPkg(p) {
+			strPkgs[i] += " [T]"
+		}
+	}
+	sort.Strings(strPkgs)
+	return strings.Join(strPkgs, " | ")
 }
 
 func TestRootPkg(t *testing.T) {
@@ -98,4 +118,19 @@ func pkgsForPaths(paths []string) []*packages.Package {
 		pkgs[i] = &packages.Package{PkgPath: path}
 	}
 	return pkgs
+}
+
+func mustAbs(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		panic(err.Error())
+	}
+	return absPath
+}
+
+func isTestPkg(pkg *packages.Package) bool {
+	return strings.HasSuffix(pkg.PkgPath, "_test") ||
+		strings.HasSuffix(pkg.PkgPath, ".test") ||
+		strings.HasSuffix(pkg.ID, ".test]") ||
+		strings.HasSuffix(pkg.ID, ".test")
 }

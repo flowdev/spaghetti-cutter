@@ -44,7 +44,9 @@ func UniquePackageName(relPkg, strictRelPkg string) string {
 // otherwise.
 func IsTestPackage(pkg *packages.Package) bool {
 	result := strings.HasSuffix(pkg.PkgPath, "_test") ||
-		strings.HasSuffix(pkg.PkgPath, ".test")
-	fmt.Println("Test package?", result, pkg.Name, pkg.PkgPath)
+		strings.HasSuffix(pkg.PkgPath, ".test") ||
+		strings.HasSuffix(pkg.ID, ".test]") ||
+		strings.HasSuffix(pkg.ID, ".test")
+	fmt.Println("Test package?", result, pkg.Name, pkg.PkgPath, pkg.ID)
 	return result
 }

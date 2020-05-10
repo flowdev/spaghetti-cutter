@@ -11,7 +11,7 @@ import (
 // looking for Go packages and analyzing them.
 func DirTree(root string) ([]*packages.Package, error) {
 	parseCfg := &packages.Config{
-		Logf:  nil, // log.Printf,
+		Logf:  nil, // log.Printf (for debug), nil (for release)
 		Dir:   root,
 		Tests: true,
 		Mode:  packages.NeedName | packages.NeedImports | packages.NeedSyntax,
