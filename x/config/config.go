@@ -235,6 +235,10 @@ func Parse(args []string, cfgFile string) Config {
 		log.Fatalf("FATAL - Unable to parse command line arguments or configuration file: %v", err)
 	}
 
+	if !cfg.NoGod && len(*cfg.God) == 0 {
+		cfg.God.Set("main") // default
+	}
+
 	//fmt.Println("Parsed config:", cfg)
 	return cfg
 }

@@ -174,7 +174,7 @@ func TestParse(t *testing.T) {
 			givenArgs:       nil,
 			givenConfigFile: "",
 			expectedConfigString: "{" +
-				"..... ... ... ... " +
+				"..... ... ... `main` " +
 				" " +
 				"2048 false false" +
 				"}",
@@ -183,7 +183,7 @@ func TestParse(t *testing.T) {
 			givenArgs:       []string{},
 			givenConfigFile: "all-empty.json",
 			expectedConfigString: "{" +
-				"..... ... ... ... " +
+				"..... ... ... `main` " +
 				" " +
 				"2048 false false" +
 				"}",

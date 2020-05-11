@@ -9,6 +9,8 @@ import (
 
 const pkgMain = "main"
 
+const testSuffix = ".test"
+
 // RelativePackageName return the package name relative towards the given root package.
 // relPkg can be `/`, `main` or a path like `pkg/x/mytool`.
 // strictRelPkg can be `/`, a path like `pkg/x/mytool` or empty.
@@ -27,9 +29,15 @@ func strictRelativePkg(rawRelPkg string) string {
 	if rawRelPkg == "" {
 		return "/"
 	} else if rawRelPkg[0] == '/' && len(rawRelPkg) > 1 {
-		return rawRelPkg[1:]
+		return removeDotTest(rawRelPkg[1:])
 	}
-	return rawRelPkg
+	return removeDotTest(rawRelPkg)
+}
+func removeDotTest(pkg string) string {
+	if strings.HasSuffix(pkg, testSuffix) {
+		return pkg[:len(pkg)-len(testSuffix)]
+	}
+	return pkg
 }
 
 // UniquePackageName returns strictRelPkg if it isn't empty and relPkg otherwise.

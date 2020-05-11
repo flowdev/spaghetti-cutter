@@ -13,12 +13,12 @@ import (
 func TestDirTree(t *testing.T) {
 	specs := []struct {
 		name          string
-		givenRoot     string
-		expectedPkgs  string
 		expectedError bool
+		expectedPkgs  string
 	}{
 		{
-			name: "happy-path",
+			name:          "happy-path",
+			expectedError: false,
 			expectedPkgs: "alltst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst | " +
 				"alltst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst [T] | " +
 				"alltst_test: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/alltst_test [T] | " +
@@ -30,11 +30,10 @@ func TestDirTree(t *testing.T) {
 				"main: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/unittst.test [T] | " +
 				"unittst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/unittst | " +
 				"unittst: github.com/flowdev/spaghetti-cutter/parse/testdata/happy-path/unittst [T]",
-			expectedError: false,
 		}, {
 			name:          "error-path",
-			expectedPkgs:  "",
 			expectedError: true,
+			expectedPkgs:  "",
 		},
 	}
 
