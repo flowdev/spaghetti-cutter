@@ -35,7 +35,6 @@ func checkPkg(
 	for _, p := range pkg.Imports {
 		if strings.HasPrefix(p.PkgPath, rootPkg) {
 			relImp, strictRelImp := pkgs.RelativePackageName(p, rootPkg)
-			fmt.Println("checkPkg - imp:", relImp, strictRelImp, p.Name, p.PkgPath)
 
 			// check in allow first:
 			var pl *config.PatternList

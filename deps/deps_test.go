@@ -37,9 +37,25 @@ func TestCheck(t *testing.T) {
 			givenArgs:      nil,
 			expectedErrors: 7,
 		}, {
-			name:           "no-args-standard-proj",
+			name:           "standard-args-standard-proj",
 			givenRoot:      "standard-proj",
 			givenArgs:      []string{"--tool", "x/*", "--db", "db/*"},
+			expectedErrors: 0,
+		}, {
+			name:           "standard-args-complex-proj",
+			givenRoot:      "complex-proj",
+			givenArgs:      []string{"--tool", "pkg/x/*", "--db", "pkg/db/*"},
+			expectedErrors: 1,
+		}, {
+			name:      "explicit-args-complex-proj",
+			givenRoot: "complex-proj",
+			givenArgs: []string{
+				"--tool", "pkg/x/*", "--db", "pkg/db/*",
+				"--allow", "pkg/domain4 pkg/domain3",
+				"--allow", "cmd/exe1 pkg/domain1", "--allow", "cmd/exe1 pkg/domain2",
+				"--allow", "cmd/exe2 pkg/domain3", "--allow", "cmd/exe2 pkg/domain4",
+				"--no-god",
+			},
 			expectedErrors: 0,
 		},
 	}
