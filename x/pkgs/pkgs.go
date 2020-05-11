@@ -1,7 +1,6 @@
 package pkgs
 
 import (
-	"fmt"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -55,6 +54,5 @@ func IsTestPackage(pkg *packages.Package) bool {
 		strings.HasSuffix(pkg.PkgPath, ".test") ||
 		strings.HasSuffix(pkg.ID, ".test]") ||
 		strings.HasSuffix(pkg.ID, ".test")
-	fmt.Println("Test package?", result, pkg.Name, pkg.PkgPath, pkg.ID)
 	return result
 }

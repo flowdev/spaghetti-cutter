@@ -12,10 +12,13 @@ import (
 )
 
 func main() {
-	cut(os.Args[1:])
+	rc := cut(os.Args[1:])
+	if rc != 0 {
+		os.Exit(rc)
+	}
 }
 
-func cut(args []string) {
+func cut(args []string) int {
 	var err error
 
 	cfg := config.Parse(args, dirs.FindConfig(config.File))
@@ -23,7 +26,7 @@ func cut(args []string) {
 	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File, cfg.IgnoreVendor)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
-		os.Exit(2)
+		return 2
 	}
 	log.Printf("INFO - configuration God: %s", cfg.God)
 	log.Printf("INFO - configuration Tool: %s", cfg.Tool)
@@ -35,7 +38,7 @@ func cut(args []string) {
 	pkgs, err := parse.DirTree(cfg.Root)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
-		os.Exit(3)
+		return 3
 	}
 
 	var errs []error
@@ -50,8 +53,10 @@ func cut(args []string) {
 		for _, err = range errs {
 			log.Printf("ERROR - %v", err)
 		}
-		os.Exit(1)
+		return 1
 	}
+
+	return 0
 }
 
 func addErrors(errs []error, newErrs []error) []error {

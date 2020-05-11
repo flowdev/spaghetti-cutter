@@ -57,7 +57,6 @@ func TestFindRoot(t *testing.T) {
 		givenRoot         string
 		givenIgnoreVendor bool
 		expectedRoot      string
-		expectedErr       bool
 	}{
 		{
 			name:              "go-mod",
