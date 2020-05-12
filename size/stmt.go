@@ -1,7 +1,6 @@
 package size
 
 import (
-	"fmt"
 	"go/ast"
 	"log"
 )
@@ -12,40 +11,30 @@ func sizeOfStmt(stmt ast.Stmt) uint {
 	switch s := stmt.(type) {
 	case *ast.AssignStmt:
 		size = sizeOfAssignStmt(s)
-		fmt.Println("Size of assign stmt:", size)
-	case *ast.BlockStmt:
-		size = sizeOfBlockStmt(s)
-		fmt.Println("Size of block stmt:", size)
+	case *ast.IncDecStmt:
+		size = sizeOfIncDecStmt(s)
 	case *ast.ReturnStmt:
 		size = sizeOfReturnStmt(s)
-		fmt.Println("Size of return stmt:", size)
-	case *ast.RangeStmt:
-		size = sizeOfRangeStmt(s)
-		fmt.Println("Size of range stmt:", size)
-	case *ast.IfStmt:
-		size = sizeOfIfStmt(s)
-		fmt.Println("Size of if stmt:", size)
-	case *ast.ForStmt:
-		size = sizeOfForStmt(s)
-		fmt.Println("Size of for stmt:", size)
-	case *ast.SwitchStmt:
-		size = sizeOfSwitchStmt(s)
-		fmt.Println("Size of switch stmt:", size)
-	case *ast.TypeSwitchStmt:
-		size = sizeOfTypeSwitchStmt(s)
-		fmt.Println("Size of type switch stmt:", size)
-	case *ast.CaseClause:
-		size = sizeOfCaseClause(s)
-		fmt.Println("Size of case clause stmt:", size)
-	case *ast.SelectStmt:
-		size = sizeOfSelectStmt(s)
-		fmt.Println("Size of select stmt:", size)
-	case *ast.CommClause:
-		size = sizeOfCommClause(s)
-		fmt.Println("Size of comm clause stmt:", size)
 	case *ast.ExprStmt:
 		size = sizeOfExprStmt(s)
-		fmt.Println("Size of expr stmt:", size)
+	case *ast.IfStmt:
+		size = sizeOfIfStmt(s)
+	case *ast.ForStmt:
+		size = sizeOfForStmt(s)
+	case *ast.RangeStmt:
+		size = sizeOfRangeStmt(s)
+	case *ast.BlockStmt:
+		size = sizeOfBlockStmt(s)
+	case *ast.SwitchStmt:
+		size = sizeOfSwitchStmt(s)
+	case *ast.TypeSwitchStmt:
+		size = sizeOfTypeSwitchStmt(s)
+	case *ast.CaseClause:
+		size = sizeOfCaseClause(s)
+	case *ast.SelectStmt:
+		size = sizeOfSelectStmt(s)
+	case *ast.CommClause:
+		size = sizeOfCommClause(s)
 	case *ast.SendStmt:
 		size = sizeOfSendStmt(s)
 	case *ast.BranchStmt:
@@ -54,8 +43,6 @@ func sizeOfStmt(stmt ast.Stmt) uint {
 		size = sizeOfGoStmt(s)
 	case *ast.LabeledStmt:
 		size = sizeOfLabeledStmt(s)
-	case *ast.IncDecStmt:
-		size = sizeOfIncDecStmt(s)
 	case *ast.DeferStmt:
 		size = sizeOfDeferStmt(s)
 	case *ast.DeclStmt:
@@ -219,7 +206,7 @@ func sizeOfGoStmt(gos *ast.GoStmt) uint {
 		return 0
 	}
 
-	return sizeOfCallExpr(gos.Call)
+	return 1 + sizeOfCallExpr(gos.Call)
 }
 
 func sizeOfSendStmt(send *ast.SendStmt) uint {
@@ -235,7 +222,7 @@ func sizeOfDeferStmt(defe *ast.DeferStmt) uint {
 		return 0
 	}
 
-	return sizeOfCallExpr(defe.Call)
+	return 1 + sizeOfCallExpr(defe.Call)
 }
 
 func sizeOfIncDecStmt(incdec *ast.IncDecStmt) uint {

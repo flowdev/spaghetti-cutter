@@ -29,10 +29,12 @@ func TestSizeOfExpr(t *testing.T) {
 							}
 							for i, name := range s.Names { // names and values
 								id, expectedSize := nameToIDandSize(name.Name)
-								actualSize := sizeOfExpr(s.Values[i])
-								if actualSize != expectedSize {
-									t.Errorf("[%s] expected size %d but got: %d", id, expectedSize, actualSize)
-								}
+								t.Run(id, func(t *testing.T) {
+									actualSize := sizeOfExpr(s.Values[i])
+									if actualSize != expectedSize {
+										t.Errorf("expected size %d but got: %d", expectedSize, actualSize)
+									}
+								})
 							}
 						case *ast.ImportSpec:
 							// ignore imports
