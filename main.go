@@ -34,6 +34,8 @@ func cut(args []string) int {
 	log.Printf("INFO - configuration Allow: %s", cfg.Allow)
 	log.Printf("INFO - configuration Size: %d", cfg.Size)
 	log.Printf("INFO - configuration Root: %s", cfg.Root)
+	log.Printf("INFO - configuration NoGod: %t", cfg.NoGod)
+	log.Printf("INFO - configuration IgnoreVendor: %t", cfg.IgnoreVendor)
 
 	pkgs, err := parse.DirTree(cfg.Root)
 	if err != nil {

@@ -3,6 +3,7 @@ package size
 import (
 	"fmt"
 	"go/ast"
+	"log"
 )
 
 func sizeOfExpr(expr ast.Expr) uint {
@@ -11,62 +12,52 @@ func sizeOfExpr(expr ast.Expr) uint {
 	switch e := expr.(type) {
 	case *ast.BasicLit:
 		size = sizeOfBasicLit(e)
-		fmt.Println("Size of basic expr:", size)
 	case *ast.CompositeLit:
 		size = sizeOfCompositeLit(e)
-		fmt.Println("Size of composite expr:", size)
 	case *ast.Ident:
 		size = sizeOfIdent(e)
-	case *ast.Ellipsis:
-		size = sizeOfEllipsis(e)
-	case *ast.StructType:
-		size = sizeOfStructType(e)
-		fmt.Println("Size of struct type expr:", size)
-	case *ast.ArrayType:
-		size = sizeOfArrayType(e)
-		fmt.Println("Size of array type expr:", size)
-	case *ast.MapType:
-		size = sizeOfMapType(e)
-		fmt.Println("Size of map type expr:", size)
-	case *ast.ChanType:
-		size = sizeOfChanType(e)
-		fmt.Println("Size of chan type expr:", size)
-	case *ast.InterfaceType:
-		size = sizeOfInterfaceType(e)
-		fmt.Println("Size of interface type expr:", size)
-	case *ast.FuncType:
-		size = sizeOfFuncType(e)
-		fmt.Println("Size of func type expr:", size)
-	case *ast.FuncLit:
-		size = sizeOfFuncLit(e)
-		fmt.Println("Size of func lit expr:", size)
-	case *ast.TypeAssertExpr:
-		size = sizeOfTypeAssertExpr(e)
+	case *ast.SelectorExpr:
+		size = sizeOfSelectorExpr(e)
 	case *ast.UnaryExpr:
 		size = sizeOfExpr(e.X)
+	case *ast.CallExpr:
+		size = sizeOfCallExpr(e)
+	case *ast.KeyValueExpr:
+		size = sizeOfKeyValueExpr(e)
+	case *ast.StructType:
+		size = sizeOfStructType(e)
+	case *ast.ArrayType:
+		size = sizeOfArrayType(e)
+	case *ast.MapType:
+		size = sizeOfMapType(e)
+	case *ast.ChanType:
+		size = sizeOfChanType(e)
+	case *ast.InterfaceType:
+		size = sizeOfInterfaceType(e)
+	case *ast.FuncType:
+		size = sizeOfFuncType(e)
+	case *ast.FuncLit:
+		size = sizeOfFuncLit(e)
+	case *ast.TypeAssertExpr:
+		size = sizeOfTypeAssertExpr(e)
 	case *ast.StarExpr:
-		size = sizeOfExpr(e.X)
-	case *ast.ParenExpr:
 		size = sizeOfExpr(e.X)
 	case *ast.SliceExpr:
 		size = sizeOfSliceExpr(e)
-		fmt.Println("Size of slice expr:", size)
-	case *ast.SelectorExpr:
-		size = sizeOfSelectorExpr(e)
-		fmt.Println("Size of selector expr:", size)
-	case *ast.KeyValueExpr:
-		size = sizeOfKeyValueExpr(e)
 	case *ast.IndexExpr:
 		size = sizeOfIndexExpr(e)
 	case *ast.BinaryExpr:
 		size = sizeOfBinaryExpr(e)
-	case *ast.CallExpr:
-		size = sizeOfCallExpr(e)
+	case *ast.ParenExpr:
+		size = sizeOfExpr(e.X)
+	case *ast.Ellipsis: // TODO: Test as function parameter type!!!
+		size = sizeOfEllipsis(e)
+		fmt.Println("Size of ellipsis expr:", size)
 	case nil:
 		size = 0
 	default:
 		size = 1
-		fmt.Printf("Size of unknown expr: %T 1\n", e)
+		log.Printf("WARNING - Don't know size of unknown expr: %T", e)
 	}
 	return size
 }
@@ -235,5 +226,5 @@ func sizeOfInterfaceType(iface *ast.InterfaceType) uint {
 		return 0
 	}
 
-	return sizeOfFieldList(iface.Methods)
+	return 1 + sizeOfFieldList(iface.Methods)
 }

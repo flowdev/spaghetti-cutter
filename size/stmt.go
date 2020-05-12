@@ -3,6 +3,7 @@ package size
 import (
 	"fmt"
 	"go/ast"
+	"log"
 )
 
 func sizeOfStmt(stmt ast.Stmt) uint {
@@ -65,7 +66,7 @@ func sizeOfStmt(stmt ast.Stmt) uint {
 		size = 0
 	default:
 		size = 1
-		fmt.Printf("Size of unknown stmt: %T 1\n", s)
+		log.Printf("WARNING - Don't know size of unknown stmt: %T", s)
 	}
 	return size
 }

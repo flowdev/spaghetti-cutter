@@ -51,5 +51,5 @@ func sizeOfFuncDecl(fun *ast.FuncDecl) uint {
 }
 
 func sizeOfFuncType(fun *ast.FuncType) uint {
-	return sizeOfFieldList(fun.Params) + sizeOfFieldList(fun.Results)
+	return 1 + sizeOfFieldList(fun.Params) + sizeOfFieldList(fun.Results)
 }
