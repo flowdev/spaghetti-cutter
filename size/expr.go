@@ -1,7 +1,6 @@
 package size
 
 import (
-	"fmt"
 	"go/ast"
 	"log"
 	"reflect"
@@ -55,9 +54,8 @@ func sizeOfExpr(expr ast.Expr) uint {
 		size = sizeOfBinaryExpr(e)
 	case *ast.ParenExpr:
 		size = sizeOfExpr(e.X)
-	case *ast.Ellipsis: // TODO: Test as function parameter type!!!
+	case *ast.Ellipsis:
 		size = sizeOfEllipsis(e)
-		fmt.Println("Size of ellipsis expr:", size)
 	case nil:
 		size = 0
 	default:

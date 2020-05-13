@@ -58,3 +58,12 @@ func (sba *SpecialBankAccount_3) DoSpecialAccountMagic_14(newHolder string, newT
 	sba.HolderTitle = newTitle
 	return sba.IBAN
 }
+
+func funcWithEllipsis_18(i, j int, names ...string) []string {
+	var addNames []string
+	for k := i; k < j; k++ {
+		addNames = append(addNames, names[k])
+	}
+
+	return append(names, addNames...)
+}
