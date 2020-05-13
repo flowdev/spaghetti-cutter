@@ -22,7 +22,7 @@ func DirTree(root string) ([]*packages.Package, error) {
 		return nil, err
 	}
 	if packages.PrintErrors(pkgs) > 0 {
-		return nil, errors.New("unable to parse packages")
+		return nil, errors.New("unable to parse packages at root: " + root)
 	}
 	return pkgs, nil
 }

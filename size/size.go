@@ -17,13 +17,12 @@ func Check(pkg *packages.Package, rootPkg string, maxSize uint) []error {
 	}
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	uniqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
-	fmt.Println("Package:", uniqPkg)
 
 	var realSize uint
 	for _, astf := range pkg.Syntax {
 		realSize += sizeOfFile(astf)
 	}
-	log.Printf("INFO - Size of package '%s': %d", relPkg, realSize)
+	log.Printf("INFO - Size of package '%s': %d", uniqPkg, realSize)
 
 	if realSize > maxSize {
 		return []error{

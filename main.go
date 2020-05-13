@@ -58,6 +58,7 @@ func cut(args []string) int {
 		return 1
 	}
 
+	log.Print("INFO - No errors found.")
 	return 0
 }
 

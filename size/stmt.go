@@ -8,6 +8,10 @@ import (
 func sizeOfStmt(stmt ast.Stmt) uint {
 	var size uint
 
+	if isNilInterfaceOrPointer(stmt) {
+		return 0
+	}
+
 	switch s := stmt.(type) {
 	case *ast.AssignStmt:
 		size = sizeOfAssignStmt(s)
@@ -68,10 +72,6 @@ func sizeOfBlockStmt(block *ast.BlockStmt) uint {
 }
 
 func sizeOfAssignStmt(assign *ast.AssignStmt) uint {
-	if assign == nil {
-		return 0
-	}
-
 	var size uint
 
 	for _, expr := range assign.Lhs {
@@ -84,10 +84,6 @@ func sizeOfAssignStmt(assign *ast.AssignStmt) uint {
 }
 
 func sizeOfReturnStmt(ret *ast.ReturnStmt) uint {
-	if ret == nil {
-		return 0
-	}
-
 	var size uint
 
 	for _, expr := range ret.Results {
@@ -97,55 +93,31 @@ func sizeOfReturnStmt(ret *ast.ReturnStmt) uint {
 }
 
 func sizeOfRangeStmt(rng *ast.RangeStmt) uint {
-	if rng == nil {
-		return 0
-	}
-
 	return sizeOfExpr(rng.Key) + sizeOfExpr(rng.Value) + sizeOfExpr(rng.X) +
-		sizeOfBlockStmt(rng.Body)
+		sizeOfStmt(rng.Body)
 }
 
 func sizeOfIfStmt(ifs *ast.IfStmt) uint {
-	if ifs == nil {
-		return 0
-	}
-
 	return sizeOfStmt(ifs.Init) + sizeOfExpr(ifs.Cond) +
-		sizeOfBlockStmt(ifs.Body) + sizeOfStmt(ifs.Else)
+		sizeOfStmt(ifs.Body) + sizeOfStmt(ifs.Else)
 }
 
 func sizeOfForStmt(fors *ast.ForStmt) uint {
-	if fors == nil {
-		return 0
-	}
-
 	return sizeOfStmt(fors.Init) + sizeOfExpr(fors.Cond) + sizeOfStmt(fors.Post) +
-		sizeOfBlockStmt(fors.Body)
+		sizeOfStmt(fors.Body)
 }
 
 func sizeOfSwitchStmt(swtch *ast.SwitchStmt) uint {
-	if swtch == nil {
-		return 0
-	}
-
 	return sizeOfStmt(swtch.Init) + sizeOfExpr(swtch.Tag) +
-		sizeOfBlockStmt(swtch.Body)
+		sizeOfStmt(swtch.Body)
 }
 
 func sizeOfTypeSwitchStmt(typswitch *ast.TypeSwitchStmt) uint {
-	if typswitch == nil {
-		return 0
-	}
-
 	return sizeOfStmt(typswitch.Init) + sizeOfStmt(typswitch.Assign) +
-		sizeOfBlockStmt(typswitch.Body)
+		sizeOfStmt(typswitch.Body)
 }
 
 func sizeOfCaseClause(clause *ast.CaseClause) uint {
-	if clause == nil {
-		return 0
-	}
-
 	var size uint
 
 	for _, expr := range clause.List {
@@ -158,18 +130,10 @@ func sizeOfCaseClause(clause *ast.CaseClause) uint {
 }
 
 func sizeOfSelectStmt(sel *ast.SelectStmt) uint {
-	if sel == nil {
-		return 0
-	}
-
-	return 1 + sizeOfBlockStmt(sel.Body)
+	return 1 + sizeOfStmt(sel.Body)
 }
 
 func sizeOfCommClause(clause *ast.CommClause) uint {
-	if clause == nil {
-		return 0
-	}
-
 	size := sizeOfStmt(clause.Comm)
 	for _, stmt := range clause.Body {
 		size += sizeOfStmt(stmt)
@@ -178,65 +142,33 @@ func sizeOfCommClause(clause *ast.CommClause) uint {
 }
 
 func sizeOfDeclStmt(decl *ast.DeclStmt) uint {
-	if decl == nil {
-		return 0
-	}
-
 	return sizeOfDecl(decl.Decl)
 }
 
 func sizeOfBranchStmt(branch *ast.BranchStmt) uint {
-	if branch == nil {
-		return 0
-	}
-
 	return 1
 }
 
 func sizeOfLabeledStmt(label *ast.LabeledStmt) uint {
-	if label == nil {
-		return 0
-	}
-
 	return 1 + sizeOfStmt(label.Stmt) // labels add cognitive load
 }
 
 func sizeOfGoStmt(gos *ast.GoStmt) uint {
-	if gos == nil {
-		return 0
-	}
-
-	return 1 + sizeOfCallExpr(gos.Call)
+	return 1 + sizeOfExpr(gos.Call)
 }
 
 func sizeOfSendStmt(send *ast.SendStmt) uint {
-	if send == nil {
-		return 0
-	}
-
 	return sizeOfExpr(send.Chan) + sizeOfExpr(send.Value)
 }
 
 func sizeOfDeferStmt(defe *ast.DeferStmt) uint {
-	if defe == nil {
-		return 0
-	}
-
-	return 1 + sizeOfCallExpr(defe.Call)
+	return 1 + sizeOfExpr(defe.Call)
 }
 
 func sizeOfIncDecStmt(incdec *ast.IncDecStmt) uint {
-	if incdec == nil {
-		return 0
-	}
-
 	return sizeOfExpr(incdec.X)
 }
 
 func sizeOfExprStmt(expr *ast.ExprStmt) uint {
-	if expr == nil {
-		return 0
-	}
-
 	return sizeOfExpr(expr.X)
 }

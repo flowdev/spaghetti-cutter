@@ -8,6 +8,10 @@ import (
 func sizeOfDecl(decl ast.Decl) uint {
 	var size uint
 
+	if isNilInterfaceOrPointer(decl) {
+		return 0
+	}
+
 	switch d := decl.(type) {
 	case *ast.FuncDecl:
 		size += sizeOfFuncDecl(d)
@@ -40,7 +44,7 @@ func sizeOfGenDecl(decl *ast.GenDecl) uint {
 func sizeOfFuncDecl(fun *ast.FuncDecl) uint {
 	size := sizeOfFieldList(fun.Recv)
 	size += sizeOfFuncType(fun.Type)
-	size += sizeOfBlockStmt(fun.Body)
+	size += sizeOfStmt(fun.Body)
 	return size
 }
 
