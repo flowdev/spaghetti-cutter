@@ -7,3 +7,7 @@
 Little command line tool for CI/CD pipelines (and dev machines) that helps to cut Go spaghetti code (a.k.a. big ball of mud) into manageable pieces (and keep it that way).
 
 ## Usage
+
+It is strongly recommended to use the `spaghetti-cutter` with a JSON
+configuration file `.spaghetti-cutter.json` in the root directory of your
+repository.
