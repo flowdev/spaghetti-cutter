@@ -17,7 +17,7 @@ jobs:
     #### expecting it in the form of
     ####   /go/src/github.com/circleci/go-tool
     ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    working_directory: /go/src/github.com/flowdev/spaghetti-cutter
     steps:
       - checkout
 
@@ -29,6 +29,7 @@ jobs:
       - run: go test -coverprofile=coverage.txt -covermode=atomic ./...
       - run: ls -la
       - run: pwd
+      - run: cat ./coverage.txt
       - run: ./cc-test-reporter format-coverage ./coverage.txt -t gocov -o ./codeclimate.json
       - run: ./cc-test-reporter upload-coverage -i ./codeclimate.json
         #- run: bash <(curl -s https://codecov.io/bash)
