@@ -26,10 +26,6 @@ jobs:
       - run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
       - run: chmod +x ./cc-test-reporter
       - run: ./cc-test-reporter before-build
-      - run: go test -coverprofile=coverage.txt -covermode=atomic ./...
-      - run: ls -la
-      - run: pwd
-      - run: cat ./coverage.txt
+      - run: go test -coverprofile=coverage.txt -covermode=count ./...
       - run: ./cc-test-reporter format-coverage ./coverage.txt -t gocov -o ./codeclimate.json
       - run: ./cc-test-reporter upload-coverage -i ./codeclimate.json
-        #- run: bash <(curl -s https://codecov.io/bash)
