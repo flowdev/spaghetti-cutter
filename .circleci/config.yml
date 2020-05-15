@@ -27,6 +27,8 @@ jobs:
       - run: chmod +x ./cc-test-reporter
       - run: ./cc-test-reporter before-build
       - run: go test -coverprofile=coverage.txt -covermode=atomic ./...
-      - run: ./cc-test-reporter format-coverage -t gcov -o ./codeclimate.json ./coverage.txt
+      - run: ls -la
+      - run: pwd
+      - run: ./cc-test-reporter format-coverage -t gocov -o ./codeclimate.json coverage.txt
       - run: ./cc-test-reporter upload-coverage -i ./codeclimate.json
       - run: bash <(curl -s https://codecov.io/bash)
