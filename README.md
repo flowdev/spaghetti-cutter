@@ -14,5 +14,5 @@ and keep it that way.
 
 ## Usage
 
-It is strongly recommended to use the a JSON configuration file
+It is strongly recommended to use a JSON configuration file
 `.spaghetti-cutter.json` in the root directory of your repository.
