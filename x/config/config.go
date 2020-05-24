@@ -90,7 +90,7 @@ type PatternGroup struct {
 type PatternMap map[string]PatternGroup
 
 // Set implements flag.Value and adds left and right patterns
-// (seperated by space in s) to the PatternMap.
+// (separated by space in s) to the PatternMap.
 func (pm *PatternMap) Set(s string) error {
 	var left, right string
 	_, err := fmt.Sscan(s, &left, &right)
