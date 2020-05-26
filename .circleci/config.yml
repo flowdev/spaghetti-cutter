@@ -29,3 +29,4 @@ jobs:
       - run: go test -coverprofile=coverage.txt -covermode=count ./...
       - run: ./cc-test-reporter format-coverage ./coverage.txt -t gocov -o ./codeclimate.json
       - run: ./cc-test-reporter upload-coverage -i ./codeclimate.json
+      - run: ls -a /bin /usr/bin

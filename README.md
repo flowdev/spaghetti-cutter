@@ -15,15 +15,14 @@ and keep it that way.
 
 ## Installation
 
-Include latest version in `go.mod` file.
+First include the latest version in your `go.mod` file, e.g.:
+```Go
+require (
+	github.com/flowdev/spaghetti-cutter v0.9
+)
+```
 
-Add a file like the following to a main package.
-Or add the import line to an existing file with similar build comment.
-This ensures that the package is indeed fetched and build but not included in
-the main or test executables and is the
-[canonical workaround](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
-for this kind of problem.
-Here is a complete [talk by Robert Radestock](https://www.youtube.com/watch?v=PhBhwgYFuw0) about this topic.
+Now add a file like the following to a main package.
 
 ```Go
 //+build tools
@@ -35,31 +34,56 @@ import (
 )
 ```
 
+Or add the import line to an existing file with similar build comment.
+This ensures that the package is indeed fetched and built but not included in
+the main or test executables. This is the
+[canonical workaround](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
+to keep everything in sync and lean.
+Here is a [talk by Robert Radestock](https://www.youtube.com/watch?v=PhBhwgYFuw0)
+about this topic.
+
+Finally you can run `go mod vendor` if that is what you like.
+
+
 ## Usage
 
-Description of (simple) usage
+You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
+from anywhere inside your project.
+This will most likely give you some error messages and an exit code bigger than
+zero because you didn't configure the `spaghetti-cutter` yet.
+
+
+### Standard Use Case: Web API
+
+This tool was especially created with Web APIs in mind as that is what about
+95% of all Gophers do according to my own totally unscientifical research.
+
+So it offers special handling for the following cases:
+- Tools: Tool packages are allowed to be used everywhere else except in other
+  tool packages. But subpackages of a tool package are allowed to be used by
+  the parent tool package.
+- Database: DB packages are allowed to be used in other DB packages and
+  standard (business) packages. Of course they can use tool packages.
+  Domain data structures can be either `db` or `tool` packages.
+- God: A god package can see and use everything. You should use this with great
+  care. `main` is the only default god package. You should only rarely add more.
+  You can switch `main` to a standard package. This makes sense if you have got
+  multiple `main` packages.
+
+Any of these rules can be overwritten with an explicit `allow` directive.
+
+
+### Configuration
 
 It is strongly recommended to use a JSON configuration file
-`.spaghetti-cutter.json` in the root directory of your repository.
+`.spaghetti-cutter.json` in the root directory of your project.
+This serves multiple purposes:
+- It helps the `spaghetti-cutter` to find the root directory of your project.
+- It saves you from retyping command line options again and again.
+- It documents the structure within the project.
+
 The configuration file is explained in detail below.
 
-- For typical web API
-
-- Hence:
-  - tools
-  - DB
-  - god
-  - allow
-  - domain data structures can be either DB or tools
-
-Best practices:
-- Split into independent business packages at router level
-  1. Router itself can be in central (god) package with
-     handlers called by the router in the business packages.
-  1. You can use subrouters in business packages and
-     compose them in the central router.
-
-### Configuration Examples
 
 Configuration file: syntax with examples
 
@@ -71,6 +95,13 @@ Details:
 
 
 ## Best Practices
+
+- Split into independent business packages at router level
+  1. Router itself can be in central (god) package with
+     handlers called by the router in the business packages.
+  1. You can use subrouters in business packages and
+     compose them in the central router.
+
 
 ### Criteria For When To Split A Service
 
