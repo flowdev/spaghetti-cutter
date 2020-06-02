@@ -28,9 +28,9 @@ func FindRoot(dir string, cfgFile string, ignoreVendor bool) (string, error) {
 	}
 
 	if ignoreVendor {
-		dir = crawlUpAndFindDirOf(".", "go.mod", cfgFile)
+		dir = crawlUpAndFindDirOf(".", cfgFile, "go.mod")
 	} else {
-		dir = crawlUpAndFindDirOf(".", "go.mod", cfgFile, "vendor")
+		dir = crawlUpAndFindDirOf(".", cfgFile, "go.mod", "vendor")
 	}
 	if dir == "" {
 		absDir, _ := filepath.Abs(".") // we checked this just inside of crawlUpAndFindDirOf()

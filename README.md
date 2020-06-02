@@ -76,9 +76,10 @@ So it offers special handling for the following cases:
   standard (business) packages. Of course they can use tool packages.
   Domain data structures can be either `db` or `tool` packages.
 - God: A god package can see and use everything. You should use this with great
-  care. `main` is the only default god package. You should only rarely add more.
-  You can switch `main` to a standard package. This makes sense if you have got
-  multiple `main` packages with different dependencies.
+  care. `main` is the only default god package used if no explicit package is
+  given. You should only rarely add more.  You can switch `main` to a standard
+  package with the `no-god` switch. This makes sense if you have got multiple
+  `main` packages with different dependencies.
 
 Any of these rules can be overwritten with an explicit `allow` directive.
 
@@ -98,7 +99,6 @@ The configuration can have the following elements:
 - `size`: the maximum allowed size/complexity of a package. Default is `2048`.
 - `no-god`: `main` won't be god package.
 - `ignore-vendor`: ignore vendor directories when searching for the project root
-  (only makes sense as a command line argument).
 - `root`: explicit project root. Should be given by the position of the config file instead.
   (only makes sense as a command line argument).
 
@@ -166,9 +166,31 @@ Here we have got a front-end application for the shopping experience and a
 back-end application for updating the catalogue.
 
 ### Command line options
+Generally it is possible to override any configuration key with command line options.
 
-Details:
-- How the project root is found
+It is most useful to use these options on the command line:
+- `--ignore-vendor`: ignore vendor directories when searching for the project root.
+- `--root`: explicit project root. Should be given by the position of the config file instead.
+  So it only makes sense if you don't have got any configuration file at all or
+  you have to override a misplaced `go.mod` file.
+
+Unfortunately it is currently impossible to use the `--root` option to find the
+correct configuration file because the config file is searched before command
+line options are read.
+Instead the directory tree is crawled upward starting at the current working
+directory in order to find the `.spaghetti-cutter.json` file.
+I would be willing to change this if there is demand for it.
+
+The root directory is found by crawling up the directory tree starting at the
+current working directory. The first directory that contains
+- the configuration file `.spaghetti-cutter.json` or
+- the Go module file `go.mod` or
+- a vendor directory `vendor` (if not prevented by `--ignore-vendor`)
+will be taken as project root.
+
+The other possible command line options are
+`--tool`, `--db`, `--god`, `--allow`, `--no-god` and `--size`.
+They work exactly like the similar configuration keys and overwrite them.
 
 
 ## Best Practices
