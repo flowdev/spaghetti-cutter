@@ -181,11 +181,13 @@ Instead the directory tree is crawled upward starting at the current working
 directory in order to find the `.spaghetti-cutter.json` file.
 I would be willing to change this if there is demand for it.
 
-The root directory is found by crawling up the directory tree starting at the
-current working directory. The first directory that contains
+If no `--root` option or `root` config key is given the root directory is found
+by crawling up the directory tree starting at the current working directory.
+The first directory that contains
 - the configuration file `.spaghetti-cutter.json` or
 - the Go module file `go.mod` or
 - a vendor directory `vendor` (if not prevented by `--ignore-vendor`)
+
 will be taken as project root.
 
 The other possible command line options are
