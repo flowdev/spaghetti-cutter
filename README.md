@@ -13,7 +13,17 @@
 that helps to cut Go spaghetti code (a.k.a. big ball of mud) into manageable pieces
 and keep it that way.
 
+Thankfully in the Go world circular dependencies between packages are already prevented by the compiler.
+So this tool has to care only about additional undesired dependencies.
+
 ## Installation
+
+Of course you can just head over to the
+[latest release](https://github.com/flowdev/spaghetti-cutter/releases/latest)
+and grab a pre-built binary and change the extension for your OS.
+But that is difficult to keep in sync when collaborating with others in a team.
+
+A much better approach for teams goes this way:
 
 First include the latest version in your `go.mod` file, e.g.:
 ```Go
@@ -22,7 +32,7 @@ require (
 )
 ```
 
-Now add a file like the following to a main package.
+Now add a file like the following to your main package.
 
 ```Go
 //+build tools
@@ -68,7 +78,7 @@ So it offers special handling for the following cases:
 - God: A god package can see and use everything. You should use this with great
   care. `main` is the only default god package. You should only rarely add more.
   You can switch `main` to a standard package. This makes sense if you have got
-  multiple `main` packages.
+  multiple `main` packages with different dependencies.
 
 Any of these rules can be overwritten with an explicit `allow` directive.
 
@@ -82,11 +92,78 @@ This serves multiple purposes:
 - It saves you from retyping command line options again and again.
 - It documents the structure within the project.
 
-The configuration file is explained in detail below.
+The configuration can have the following elements:
+- `tool`, `db` and `god` for tool, database and god packages as discussed above.
+- `allow`: for allowing additional dependencies.
+- `size`: the maximum allowed size/complexity of a package. Default is `2048`.
+- `no-god`: `main` won't be god package.
+- `ignore-vendor`: ignore vendor directories when searching for the project root
+  (only makes sense as a command line argument).
+- `root`: explicit project root. Should be given by the position of the config file instead.
+  (only makes sense as a command line argument).
 
+The size configuration key prevents a clever developer from just thowing all of
+the spaghetti code into a single package.
+With the `spaghetti-cutter` such things will become obvious and you can put
+them as technical dept into your back log.
 
-Configuration file: syntax with examples
+This is a simple example configuration file:
+```json
+{
+	"tool": "x/*"
+}
+```
+All packages directly under `x` are tool packages that can be used everywhere else in the project.
 
+A slightly different variant is:
+```json
+{
+	"tool": "x/**"
+}
+```
+All packages under `x` are tool packages that can be used everywhere else in the project.
+So the `**` makes all sub-packages tool packages, too.
+In most cases one level is enough.
+
+Multiple values are possible for a single key.
+So this is another valid configuration file:
+```json
+{
+	"tool": ["x/*", "parse"]
+}
+```
+
+`*`, `**` and multiple values are allowed for the `tool`, `db`, `god` and `allow` keys.
+
+So a rather complex example looks like this:
+```json
+{
+	"tool": "pkg/x/*",
+	"db": ["pkg/model", "pkg/postgres"],
+	"allow": ["pkg/shopping pkg/catalogue", "pkg/shopping pkg/cart"],
+	"god": "cmd/**",
+	"size": 1024
+}
+```
+The `god` line shouldn't be necessary as all packages under `cmd/` should be `main` packages.
+
+The case with multiple executables with different dependencies is interesting, too:
+```json
+{
+	"tool": "pkg/x/*",
+	"db": ["pkg/model", "pkg/postgres"],
+	"allow": [
+		"cmd/front-end pkg/shopping",
+		"cmd/back-end pkg/catalogue",
+		"pkg/shopping pkg/catalogue",
+		"pkg/shopping pkg/cart"
+	],
+	"no-god": true,
+	"size": 1024
+}
+```
+Here we have got a front-end application for the shopping experience and a
+back-end application for updating the catalogue.
 
 ### Command line options
 
