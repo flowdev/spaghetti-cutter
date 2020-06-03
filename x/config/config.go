@@ -197,12 +197,12 @@ type Config struct {
 func Parse(args []string, cfgFile string) Config {
 	const (
 		usageAllow = "allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')"
-		usageTool  = "tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/'"
+		usageTool  = "tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/')"
 		usageDB    = "common domain/database package (can only depend on tools) " +
 			"(e.g. 'pkg/*/db'; '*' matches anything except for a '/')"
 		usageGod          = "god package that can see everything (default: 'main')"
 		usageNoGod        = "override default: 'main' won't be implicit god package"
-		usageRoot         = "root directory"
+		usageRoot         = "project root directory"
 		usageSize         = "maximum size of a package in \"lines\""
 		usageIgnoreVendor = "ignore any 'vendor' directory when searching the project root"
 		defaultSize       = 2048

@@ -190,8 +190,26 @@ The first directory that contains
 
 will be taken as project root.
 
-The other possible command line options are
-`--tool`, `--db`, `--god`, `--allow`, `--no-god` and `--size`.
+The possible command line options are:
+```
+Usage of spaghetti-cutter:
+  -allow value
+     allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')
+  -db value
+     common domain/database package (can only depend on tools) (e.g. 'pkg/*/db'; '*' matches anything except for a '/')
+  -god value
+     god package that can see everything (default: 'main')
+  -ignore-vendor
+     ignore any 'vendor' directory when searching the project root
+  -no-god
+     override default: 'main' won't be implicit god package
+  -root string
+     project root directory
+  -size uint
+     maximum size of a package in "lines" (default 2048)
+  -tool value
+     tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/')
+```
 They work exactly like the similar configuration keys and overwrite them.
 
 
