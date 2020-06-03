@@ -197,25 +197,87 @@ They work exactly like the similar configuration keys and overwrite them.
 
 ## Best Practices
 
-- Split into independent business packages at router level
-  1. Router itself can be in central (god) package with
-     handlers called by the router in the business packages.
-  1. You can use subrouters in business packages and
-     compose them in the central router.
+For web APIs it is useful to split into independent business packages at router level.
+Router itself can be in a central (god) package. The split can be done in two ways:
+1. The central router calls handlers that reside in the business packages.
+1. The central router composes itself from subrouters in business packages.
+
+The second option minimizes the API surface of the business package and helps
+to ensure that all routes handled by a business package share a common URL path root.
+But it also adds the concept of subrouters that isn't used so widely and
+increasing cognitive load this way.
+Plus it makes it harder to find the implementation for a route.
+
+So I recommend to start with the first option and switch to the second if the
+central router becomes too big to handle.
 
 
 ### Criteria For When To Split A Service
 
-- When different parts of the service have to scale very differently
-  (e.g. front-end vs. back-end of a shop).
-- The data the different parts of the service work on is very or even completely different.
-- Last and weakest indicator: A service is growing unbounded like cancer.
+A common reason to split a service is when different parts of the service have
+to scale very differently.
+A shop front-end that has to serve many thousand customers needs to scale much
+more than the shop back-end that only has to serve a few employees.
+Of course this isn't useful as long as you have got only a single instance of
+the shop front-end running.
+Please remember that Go is often used to consolidate many servers written in
+some script language. Often replacing ten script servers with a single Go
+instance saving a lot of hosting costs and operational work.
+
+Another good reason to split a service is when the data the different parts of
+the service work on is very or even completely different.
+Please remember that overlaping data will lead to redundancies and you have to
+ensure consistency on your own.
+After such a split the overall system is usually only eventual consistent.
+
+The last and weakest indicator is that the service is growing unbounded like cancer.
+It is completely normal that a service is growing.
+When the tests run for too long it is better to find a tool for handling
+monorepos that helps you to run only the necessary tests.
+Unfortunately I can't point you to one. But I know that this is a problem that
+has been solved multiple times.
+Such additional tools can go a long way before it makes sense to split a service.
+
 
 ### Recommendation How To Split A Service If Really Useful
 
-1. Look at the structure (allowed dependencies)
-1. Look at DB usage
-1. Find spot of "weakest link"
-1. Try to minimize links (but not artificially)
-1. Replace remaining internal calls with external (e.g. HTTP) calls or messages.
-1. Split.
+I recommend to split a service if it is sure to be really useful by first
+looking at the package structure in `.spaghetti-cutter.json`.
+You wouldn't want to separate packages into own services if one package depends
+on the other as per `allow` directive.
+`tool` packages are a bit simpler since they tend change less often.
+They should just serve a single purpose well.
+So they can be easily extracted into an external library or they can be copied
+if the reusage isn't driven by businss needs but more accidental.
+If some `tool` packages won't be used by all the services after the split you
+should take advantage of that.
+
+Next it is important to look at the DB usage. Packages that share a lot of data
+or methods to access data should not be split into separate services.
+Now it is time to find the weakest link between future services.
+You should consider all three types of links:
+- `tool` packages (least important),
+- database usage (quite important) and
+- `allow` directives (most important).
+
+When the weakes links are found it is great if you can even minimize these links.
+Over time they tend to accumulate and some aren't really necessary anymore.
+It is often great to get a perspective from the business side about this.
+
+Now it is time to replace the remaining internal calls between packages that
+will become separate services with external calls.
+RESTful HTTP requests and gRPC are used most often for this.
+Messaging between services can give you more scalability and decoupling but is
+harder to debug and some additional technology to master.
+Often you already have got a company wide standard for communication between services.
+
+Creating multiple main packages for the different services should be rather simple.
+Each should just be a subset of the old main package.
+If you have got more god packages than just `main` you should split them now of course.
+Now you already have multiple separately deployable services.
+
+Finally you can do the split.
+
+You can minimize the necessary work a lot by always watching dependencies grow
+and minimizing links as soon as possible.
+The `spaghetti-cutter` can be your companion on the way.
