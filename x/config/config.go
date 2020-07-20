@@ -1,55 +1,32 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/peterbourgon/ff/v3"
 )
 
 // File is the name of the configuration file
 const File = ".spaghetti-cutter.json"
 
-var (
-	// Value is the set value for own maps that are really sets.
-	Value = struct{}{}
-)
-
 // Pattern combines the original pattern string with a compiled regular
 // expression ready for efficient evaluation.
 type Pattern struct {
-	Pattern string
-	Regexp  *regexp.Regexp
+	pattern string
+	regexp  *regexp.Regexp
 }
 
-// PatternList is a flag.Value that collects each Set string
-// into a slice, allowing for repeated flags.
+// PatternList is a slice of the Pattern type.
 type PatternList []Pattern
 
-// Set implements flag.Value and appends a pattern to the slice.
-func (pl *PatternList) Set(s string) error {
-	for _, p := range *pl {
-		if p.Pattern == s {
-			return nil // deduplication
-		}
-	}
-	re, err := regexpForPattern(s)
-	if err != nil {
-		return fmt.Errorf("unable to set pattern `%s`: %w", s, err)
-	}
-	*pl = append(*pl, Pattern{Pattern: s, Regexp: re})
-	return nil
-}
-
-// String implements flag.Value and returns the list of
+// String implements Stringer and returns the list of
 // patterns, or "..." if no patterns have been added.
 func (pl *PatternList) String() string {
-	if len(*pl) <= 0 {
+	if pl == nil || len(*pl) <= 0 {
 		return "..."
 	}
 	var b strings.Builder
@@ -58,7 +35,7 @@ func (pl *PatternList) String() string {
 			b.WriteString(", ")
 		}
 		b.WriteString("`")
-		b.WriteString(p.Pattern)
+		b.WriteString(p.pattern)
 		b.WriteString("`")
 	}
 	return b.String()
@@ -71,53 +48,25 @@ func (pl *PatternList) MatchString(s string) bool {
 		return false
 	}
 	for _, p := range *pl {
-		if p.Regexp.MatchString(s) {
+		if p.regexp.MatchString(s) {
 			return true
 		}
 	}
 	return false
 }
 
-// PatternGroup groups a parent/left pattern with a list of children/right
-// patterns.
-type PatternGroup struct {
-	Left  Pattern
-	Right *PatternList
+type patternGroup struct {
+	left  Pattern
+	right *PatternList
 }
 
-// PatternMap is a flag.Value that collects each Set string
-// into PatternGroups, allowing for repeated flags.
-type PatternMap map[string]PatternGroup
+// PatternMap is a map from a single pattern to a list of patterns.
+type PatternMap map[string]patternGroup
 
-// Set implements flag.Value and adds left and right patterns
-// (separated by space in s) to the PatternMap.
-func (pm *PatternMap) Set(s string) error {
-	var left, right string
-	_, err := fmt.Sscan(s, &left, &right)
-	if err != nil {
-		return fmt.Errorf("unable to split pattern group %q into left and right patterns: %w", s, err)
-	}
-
-	group := (*pm)[left]
-	if group == (PatternGroup{}) {
-		re, err := regexpForPattern(left)
-		if err != nil {
-			return fmt.Errorf("unable to set left pattern %q: %w", s, err)
-		}
-		list := PatternList(make([]Pattern, 0, 16))
-		group = PatternGroup{
-			Left:  Pattern{Pattern: left, Regexp: re},
-			Right: &list,
-		}
-		(*pm)[left] = group
-	}
-	return group.Right.Set(right)
-}
-
-// String implements flag.Value and returns the map of
-// string sets, or "..." if no strings have been added.
+// String implements Stringer and returns the map of patterns,
+// or "....." if it is empty.
 func (pm *PatternMap) String() string {
-	if len(*pm) <= 0 {
+	if pm == nil || len(*pm) <= 0 {
 		return "....."
 	}
 	keys := make([]string, 0, len(*pm))
@@ -131,7 +80,7 @@ func (pm *PatternMap) String() string {
 		b.WriteString(left)
 		b.WriteString("`")
 		b.WriteString(": ")
-		b.WriteString((*pm)[left].Right.String())
+		b.WriteString((*pm)[left].right.String())
 		b.WriteString(" ; ")
 	}
 	s := b.String()
@@ -142,11 +91,114 @@ func (pm *PatternMap) String() string {
 // the given string and nil otherwise.
 func (pm *PatternMap) MatchingList(s string) *PatternList {
 	for _, group := range *pm {
-		if group.Left.Regexp.MatchString(s) {
-			return group.Right
+		if group.left.regexp.MatchString(s) {
+			return group.right
 		}
 	}
 	return nil
+}
+
+// Config contains the parsed configuration.
+type Config struct {
+	AllowOnlyIn       *PatternMap
+	AllowAdditionally *PatternMap
+	Tool              *PatternList
+	DB                *PatternList
+	God               *PatternList
+	Root              string
+	Size              uint
+	NoGod             bool
+	IgnoreVendor      bool
+}
+
+type jsonConfig struct {
+	AllowOnlyIn       map[string][]string `json:"allowOnlyIn,omitempty"`
+	AllowAdditionally map[string][]string `json:"allowAdditionally,omitempty"`
+	Tool              []string            `json:"tool,omitempty"`
+	DB                []string            `json:"db,omitempty"`
+	God               []string            `json:"god,omitempty"`
+	Root              string              `json:"root,omitempty"`
+	Size              uint                `json:"size,omitempty"`
+	NoGod             bool                `json:"noGod,omitempty"`
+	IgnoreVendor      bool                `json:"ignoreVendor,omitempty"`
+}
+
+func convertFromJSON(jcfg jsonConfig) (Config, error) {
+	var err error
+	var pl *PatternList
+	var pm *PatternMap
+
+	cfg := Config{
+		Root:         jcfg.Root,
+		Size:         jcfg.Size,
+		NoGod:        jcfg.NoGod,
+		IgnoreVendor: jcfg.IgnoreVendor,
+	}
+
+	if pm, err = convertPatternMapFromJSON(jcfg.AllowOnlyIn); err != nil {
+		return cfg, err
+	}
+	cfg.AllowOnlyIn = pm
+
+	if pm, err = convertPatternMapFromJSON(jcfg.AllowAdditionally); err != nil {
+		return cfg, err
+	}
+	cfg.AllowAdditionally = pm
+
+	if pl, err = convertPatternListFromJSON(jcfg.Tool); err != nil {
+		return cfg, err
+	}
+	cfg.Tool = pl
+
+	if pl, err = convertPatternListFromJSON(jcfg.DB); err != nil {
+		return cfg, err
+	}
+	cfg.DB = pl
+
+	if pl, err = convertPatternListFromJSON(jcfg.God); err != nil {
+		return cfg, err
+	}
+	cfg.God = pl
+
+	return cfg, nil
+}
+
+func convertPatternMapFromJSON(m map[string][]string) (*PatternMap, error) {
+	var err error
+	var pl *PatternList
+	var re *regexp.Regexp
+	pm := PatternMap(make(map[string]patternGroup, 16))
+
+	for k, v := range m {
+		if re, err = regexpForPattern(k); err != nil {
+			return nil, fmt.Errorf("unable to set left/key pattern %q: %w", k, err)
+		}
+		if pl, err = convertPatternListFromJSON(v); err != nil {
+			return nil, err
+		}
+		pm[k] = patternGroup{
+			left:  Pattern{pattern: k, regexp: re},
+			right: pl,
+		}
+	}
+
+	return &pm, nil
+}
+
+func convertPatternListFromJSON(s []string) (*PatternList, error) {
+	var err error
+	var pl PatternList
+	var re *regexp.Regexp
+
+	l := make([]Pattern, len(s))
+	for i, t := range s {
+		if re, err = regexpForPattern(t); err != nil {
+			return nil, fmt.Errorf("unable to use pattern `%s`: %w", t, err)
+		}
+		l[i] = Pattern{pattern: t, regexp: re}
+	}
+	pl = PatternList(l)
+	return &pl, nil
 }
 
 func regexpForPattern(pattern string) (*regexp.Regexp, error) {
@@ -181,64 +233,28 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 	return regexp.Compile(re)
 }
 
-// Config contains the parsed configuration.
-type Config struct {
-	Allow        *PatternMap
-	Tool         *PatternList
-	DB           *PatternList
-	God          *PatternList
-	Root         string
-	Size         uint
-	NoGod        bool
-	IgnoreVendor bool
-}
-
-// Parse parses command line arguments and configuration file
-func Parse(args []string, cfgFile string) Config {
-	const (
-		usageAllow = "allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')"
-		usageTool  = "tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/')"
-		usageDB    = "common domain/database package (can only depend on tools) " +
-			"(e.g. 'pkg/*/db'; '*' matches anything except for a '/')"
-		usageGod          = "god package that can see everything (default: 'main')"
-		usageNoGod        = "override default: 'main' won't be implicit god package"
-		usageRoot         = "project root directory"
-		usageSize         = "maximum size of a package in \"lines\""
-		usageIgnoreVendor = "ignore any 'vendor' directory when searching the project root"
-		defaultSize       = 2048
-	)
-
-	allow := PatternMap(make(map[string]PatternGroup))
-	tool := PatternList(make([]Pattern, 0, 16))
-	db := PatternList(make([]Pattern, 0, 16))
-	god := PatternList(make([]Pattern, 0, 16))
-	cfg := Config{Allow: &allow, Tool: &tool, DB: &db, God: &god}
-
-	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
-	fs.Var(cfg.Allow, "allow", usageAllow)
-	fs.Var(cfg.Tool, "tool", usageTool)
-	fs.Var(cfg.DB, "db", usageDB)
-	fs.Var(cfg.God, "god", usageGod)
-	fs.BoolVar(&cfg.NoGod, "no-god", false, usageNoGod)
-	fs.StringVar(&cfg.Root, "root", "", usageRoot)
-	fs.UintVar(&cfg.Size, "size", defaultSize, usageSize)
-	fs.BoolVar(&cfg.IgnoreVendor, "ignore-vendor", false, usageIgnoreVendor)
-
-	ffOpts := []ff.Option{
-		ff.WithEnvVarPrefix("SPAGHETTI_CUTTER"),
-	}
-	if cfgFile != "" {
-		ffOpts = append(ffOpts, ff.WithConfigFile(cfgFile), ff.WithConfigFileParser(ff.JSONParser))
-	}
-	err := ff.Parse(fs, args, ffOpts...)
+// Parse parses the configuration file
+func Parse(cfgFile string) (Config, error) {
+	cfg := Config{}
+	jsonCfg := jsonConfig{}
+	cfgBytes, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
-		log.Fatalf("FATAL - Unable to parse command line arguments or configuration file: %v", err)
+		return Config{}, fmt.Errorf("unable to read configuration file %q: %w", cfgFile, err)
+	}
+	if err = json.Unmarshal(cfgBytes, &jsonCfg); err != nil {
+		return Config{}, fmt.Errorf("unable to unmarshal JSON configuration from file %q: %w", cfgFile, err)
 	}
 
-	if !cfg.NoGod && len(*cfg.God) == 0 {
-		cfg.God.Set("main") // default
+	if !jsonCfg.NoGod && len(jsonCfg.God) == 0 {
+		jsonCfg.God = []string{"main"} // default
+	}
+	if jsonCfg.Size == 0 {
+		jsonCfg.Size = 2048
 	}
 
-	//fmt.Println("Parsed config:", cfg)
-	return cfg
+	if cfg, err = convertFromJSON(jsonCfg); err != nil {
+		return Config{}, err
+	}
+
+	return cfg, nil
 }
