@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/flowdev/spaghetti-cutter/deps"
 	"github.com/flowdev/spaghetti-cutter/parse"
@@ -19,25 +20,26 @@ func main() {
 }
 
 func cut(args []string) int {
-	var err error
-
-	cfg := config.Parse(args, dirs.FindConfig(config.File))
-
-	cfg.Root, err = dirs.FindRoot(cfg.Root, config.File, cfg.IgnoreVendor)
+	root, err := dirs.FindRoot(".", config.File)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
 		return 2
 	}
+	cfg, err := config.Parse(filepath.Join(root, config.File))
+	if err != nil {
+		log.Printf("FATAL - %v", err)
+		return 4
+	}
+
 	log.Printf("INFO - configuration God: %s", cfg.God)
 	log.Printf("INFO - configuration Tool: %s", cfg.Tool)
 	log.Printf("INFO - configuration DB: %s", cfg.DB)
-	log.Printf("INFO - configuration Allow: %s", cfg.Allow)
+	log.Printf("INFO - configuration AllowAdditionally: %s", cfg.AllowAdditionally)
 	log.Printf("INFO - configuration Size: %d", cfg.Size)
-	log.Printf("INFO - configuration Root: %s", cfg.Root)
 	log.Printf("INFO - configuration NoGod: %t", cfg.NoGod)
 	log.Printf("INFO - configuration IgnoreVendor: %t", cfg.IgnoreVendor)
 
-	pkgs, err := parse.DirTree(cfg.Root)
+	pkgs, err := parse.DirTree(root)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
 		return 3

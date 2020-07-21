@@ -105,7 +105,6 @@ type Config struct {
 	Tool              *PatternList
 	DB                *PatternList
 	God               *PatternList
-	Root              string
 	Size              uint
 	NoGod             bool
 	IgnoreVendor      bool
@@ -117,7 +116,6 @@ type jsonConfig struct {
 	Tool              []string            `json:"tool,omitempty"`
 	DB                []string            `json:"db,omitempty"`
 	God               []string            `json:"god,omitempty"`
-	Root              string              `json:"root,omitempty"`
 	Size              uint                `json:"size,omitempty"`
 	NoGod             bool                `json:"noGod,omitempty"`
 	IgnoreVendor      bool                `json:"ignoreVendor,omitempty"`
@@ -129,7 +127,6 @@ func convertFromJSON(jcfg jsonConfig) (Config, error) {
 	var pm *PatternMap
 
 	cfg := Config{
-		Root:         jcfg.Root,
 		Size:         jcfg.Size,
 		NoGod:        jcfg.NoGod,
 		IgnoreVendor: jcfg.IgnoreVendor,

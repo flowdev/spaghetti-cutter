@@ -39,10 +39,10 @@ func checkPkg(
 			// check in allow first:
 			var pl *config.PatternList
 			if strictRelPkg != "" {
-				pl = cfg.Allow.MatchingList(strictRelPkg)
+				pl = cfg.AllowAdditionally.MatchingList(strictRelPkg)
 			}
 			if pl == nil {
-				pl = cfg.Allow.MatchingList(relPkg)
+				pl = cfg.AllowAdditionally.MatchingList(relPkg)
 			}
 			if isPackageInList(pl, relImp, strictRelImp) {
 				continue // this import is fine
