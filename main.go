@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -25,7 +26,13 @@ func cut(args []string) int {
 		log.Printf("FATAL - %v", err)
 		return 2
 	}
-	cfg, err := config.Parse(filepath.Join(root, config.File))
+	cfgFile := filepath.Join(root, config.File)
+	cfgBytes, err := ioutil.ReadFile(cfgFile)
+	if err != nil {
+		log.Printf("FATAL - unable to read configuration file %q: %v", cfgFile, err)
+		return 3
+	}
+	cfg, err := config.Parse(cfgBytes, cfgFile)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
 		return 4
@@ -42,7 +49,7 @@ func cut(args []string) int {
 	pkgs, err := parse.DirTree(root)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
-		return 3
+		return 5
 	}
 
 	var errs []error

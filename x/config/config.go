@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"regexp"
 	"sort"
 	"strings"
@@ -107,7 +106,6 @@ type Config struct {
 	God               *PatternList
 	Size              uint
 	NoGod             bool
-	IgnoreVendor      bool
 }
 
 type jsonConfig struct {
@@ -118,7 +116,6 @@ type jsonConfig struct {
 	God               []string            `json:"god,omitempty"`
 	Size              uint                `json:"size,omitempty"`
 	NoGod             bool                `json:"noGod,omitempty"`
-	IgnoreVendor      bool                `json:"ignoreVendor,omitempty"`
 }
 
 func convertFromJSON(jcfg jsonConfig) (Config, error) {
@@ -127,9 +124,8 @@ func convertFromJSON(jcfg jsonConfig) (Config, error) {
 	var pm *PatternMap
 
 	cfg := Config{
-		Size:         jcfg.Size,
-		NoGod:        jcfg.NoGod,
-		IgnoreVendor: jcfg.IgnoreVendor,
+		Size:  jcfg.Size,
+		NoGod: jcfg.NoGod,
 	}
 
 	if pm, err = convertPatternMapFromJSON(jcfg.AllowOnlyIn); err != nil {
@@ -230,14 +226,12 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 	return regexp.Compile(re)
 }
 
-// Parse parses the configuration file
-func Parse(cfgFile string) (Config, error) {
+// Parse parses the configuration bytes and uses cfgFile only for better error
+// messages.
+func Parse(cfgBytes []byte, cfgFile string) (Config, error) {
+	var err error
 	cfg := Config{}
 	jsonCfg := jsonConfig{}
-	cfgBytes, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		return Config{}, fmt.Errorf("unable to read configuration file %q: %w", cfgFile, err)
-	}
 	if err = json.Unmarshal(cfgBytes, &jsonCfg); err != nil {
 		return Config{}, fmt.Errorf("unable to unmarshal JSON configuration from file %q: %w", cfgFile, err)
 	}
