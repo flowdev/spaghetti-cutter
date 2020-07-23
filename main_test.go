@@ -1,51 +1,56 @@
 package main
 
 import (
+	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/flowdev/spaghetti-cutter/x/config"
 )
 
 func TestCut(t *testing.T) {
 	specs := []struct {
 		name               string
 		givenRoot          string
-		givenArgs          []string
+		givenConfig        string
 		expectedReturnCode int
 	}{
 		{
-			name:               "no-args-good-proj",
+			name:               "no-config-good-proj",
 			givenRoot:          "good-proj",
-			givenArgs:          nil,
+			givenConfig:        `{}`,
 			expectedReturnCode: 1,
 		}, {
-			name:      "strict-args-good-proj",
+			name:      "strict-config-good-proj",
 			givenRoot: "good-proj",
-			givenArgs: []string{
-				"--tool", "pkg/x/*", "--db", "pkg/db/*",
-				"--allow", "pkg/domain4 pkg/domain3",
-				"--size", "16",
-			},
+			givenConfig: `{
+				"tool": ["pkg/x/*"], "db": ["pkg/db/*"],
+				"allowAdditionally": {"pkg/domain4": ["pkg/domain3"]},
+				"size": 16
+			}`,
 			expectedReturnCode: 1,
 		}, {
-			name:      "lenient-args-good-proj",
+			name:      "lenient-config-good-proj",
 			givenRoot: "good-proj",
-			givenArgs: []string{
-				"--tool", "pkg/x/*", "--db", "pkg/db/*",
-				"--allow", "pkg/domain4 pkg/domain3",
-				"--size", "1024",
-			},
+			givenConfig: `{
+				"tool": ["pkg/x/*"], "db": ["pkg/db/*"],
+				"allowAdditionally": {"pkg/domain4": ["pkg/domain3"]},
+				"size": 1024
+			}`,
 			expectedReturnCode: 0,
 		}, {
-			name:               "no-args-bad-proj",
+			name:               "no-config-bad-proj",
 			givenRoot:          "bad-proj",
-			givenArgs:          nil,
-			expectedReturnCode: 3,
+			givenConfig:        `{}`,
+			expectedReturnCode: 6,
 		},
 	}
 
 	for _, spec := range specs {
 		t.Run(spec.name, func(t *testing.T) {
-			args := append(spec.givenArgs, "--root", mustAbs(filepath.Join("testdata", spec.givenRoot)))
+			root := mustAbs(filepath.Join("testdata", spec.givenRoot))
+			mustWriteFile(filepath.Join(root, config.File), []byte(spec.givenConfig))
+			args := []string{"--root", root}
 			actualReturnCode := cut(args)
 
 			if actualReturnCode != spec.expectedReturnCode {
@@ -61,4 +66,11 @@ func mustAbs(path string) string {
 		panic(err.Error())
 	}
 	return absPath
+}
+
+func mustWriteFile(filename string, data []byte) {
+	err := ioutil.WriteFile(filename, data, 0644)
+	if err != nil {
+		panic(err.Error())
+	}
 }

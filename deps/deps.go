@@ -33,9 +33,31 @@ func checkPkg(
 	checkSpecial func(string, string, string, string, config.Config) error,
 ) (errs []error) {
 	for _, p := range pkg.Imports {
-		if strings.HasPrefix(p.PkgPath, rootPkg) {
-			relImp, strictRelImp := pkgs.RelativePackageName(p, rootPkg)
+		relImp, strictRelImp := "", ""
+		internal := false
 
+		if strings.HasPrefix(p.PkgPath, rootPkg) {
+			relImp, strictRelImp = pkgs.RelativePackageName(p, rootPkg)
+			internal = true
+		} else {
+			strictRelImp = p.PkgPath
+		}
+
+		pl := cfg.AllowOnlyIn.MatchingList(strictRelImp)
+		if pl == nil {
+			pl = cfg.AllowOnlyIn.MatchingList(relImp)
+		}
+		if pl != nil {
+			if !isPackageInList(pl, relPkg, strictRelPkg) {
+				errs = append(errs, fmt.Errorf(
+					"package '%s' isn't allowed to import package '%s' (because of allowOnlyIn)",
+					pkgs.UniquePackageName(relPkg, strictRelPkg),
+					pkgs.UniquePackageName(relImp, strictRelImp)))
+			}
+			continue
+		}
+
+		if internal {
 			// check in allow first:
 			var pl *config.PatternList
 			if strictRelPkg != "" {

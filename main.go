@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,35 +22,49 @@ func main() {
 }
 
 func cut(args []string) int {
-	root, err := dirs.FindRoot(".", config.File)
+	const (
+		defaultRoot = "."
+		usage       = "root directory of the project"
+	)
+	var startDir string
+	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
+	fs.StringVar(&startDir, "root", defaultRoot, usage)
+	fs.StringVar(&startDir, "r", defaultRoot, usage+" (shorthand)")
+	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
 		return 2
+	}
+
+	root, err := dirs.FindRoot(startDir, config.File)
+	if err != nil {
+		log.Printf("FATAL - %v", err)
+		return 3
 	}
 	cfgFile := filepath.Join(root, config.File)
 	cfgBytes, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		log.Printf("FATAL - unable to read configuration file %q: %v", cfgFile, err)
-		return 3
+		return 4
 	}
 	cfg, err := config.Parse(cfgBytes, cfgFile)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
-		return 4
+		return 5
 	}
 
+	log.Printf("INFO - configuration AllowOnlyIn: %s", cfg.AllowOnlyIn)
+	log.Printf("INFO - configuration AllowAdditionally: %s", cfg.AllowAdditionally)
 	log.Printf("INFO - configuration God: %s", cfg.God)
 	log.Printf("INFO - configuration Tool: %s", cfg.Tool)
 	log.Printf("INFO - configuration DB: %s", cfg.DB)
-	log.Printf("INFO - configuration AllowAdditionally: %s", cfg.AllowAdditionally)
 	log.Printf("INFO - configuration Size: %d", cfg.Size)
 	log.Printf("INFO - configuration NoGod: %t", cfg.NoGod)
-	log.Printf("INFO - configuration IgnoreVendor: %t", cfg.IgnoreVendor)
 
 	pkgs, err := parse.DirTree(root)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
-		return 5
+		return 6
 	}
 
 	var errs []error

@@ -13,56 +13,77 @@ func TestCheck(t *testing.T) {
 	specs := []struct {
 		name           string
 		givenRoot      string
-		givenArgs      []string
+		givenConfig    string
 		expectedErrors int
 	}{
 		{
-			name:           "no-args-one-pkg",
+			name:           "no-config-one-pkg",
 			givenRoot:      "one-pkg",
-			givenArgs:      nil,
+			givenConfig:    `{}`,
 			expectedErrors: 0,
 		}, {
-			name:           "no-args-only-tools",
+			name:           "no-config-only-tools",
 			givenRoot:      "only-tools",
-			givenArgs:      nil,
+			givenConfig:    `{}`,
 			expectedErrors: 1,
 		}, {
 			name:           "allow-tool-only-tools",
 			givenRoot:      "only-tools",
-			givenArgs:      []string{"-allow", "x/tool2 x/tool"},
+			givenConfig:    `{"allowAdditionally": {"x/tool2": ["x/tool"]} }`,
 			expectedErrors: 0,
 		}, {
-			name:           "no-args-standard-proj",
+			name:           "no-config-standard-proj",
 			givenRoot:      "standard-proj",
-			givenArgs:      nil,
+			givenConfig:    `{}`,
 			expectedErrors: 7,
 		}, {
-			name:           "standard-args-standard-proj",
+			name:           "standard-config-standard-proj",
 			givenRoot:      "standard-proj",
-			givenArgs:      []string{"--tool", "x/*", "--db", "db/*"},
+			givenConfig:    `{"tool": ["x/*"], "db": ["db/*"]}`,
 			expectedErrors: 0,
 		}, {
-			name:           "standard-args-complex-proj",
+			name:           "standard-config-complex-proj",
 			givenRoot:      "complex-proj",
-			givenArgs:      []string{"--tool", "pkg/x/*", "--db", "pkg/db/*"},
+			givenConfig:    `{"tool": ["pkg/x/*"], "db": ["pkg/db/*"]}`,
 			expectedErrors: 1,
 		}, {
-			name:      "explicit-args-complex-proj",
+			name:      "allowOnlyIn-config-complex-proj",
 			givenRoot: "complex-proj",
-			givenArgs: []string{
-				"--tool", "pkg/x/*", "--db", "pkg/db/*",
-				"--allow", "pkg/domain4 pkg/domain3",
-				"--allow", "cmd/exe1 pkg/domain1", "--allow", "cmd/exe1 pkg/domain2",
-				"--allow", "cmd/exe2 pkg/domain3", "--allow", "cmd/exe2 pkg/domain4",
-				"--no-god",
-			},
+			givenConfig: `{
+				"allowOnlyIn": {"pkg/domain3": ["pkg/domain4"]},
+				"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
+			}`,
+			expectedErrors: 0,
+		}, {
+			name:      "bad-allowOnlyIn-config-complex-proj",
+			givenRoot: "complex-proj",
+			givenConfig: `{
+				"allowOnlyIn": {"pkg/domain3": ["pkg/domain1"]},
+				"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
+			}`,
+			expectedErrors: 1,
+		}, {
+			name:      "explicit-config-complex-proj",
+			givenRoot: "complex-proj",
+			givenConfig: `{
+				"tool": ["pkg/x/*"], "db": ["pkg/db/*"],
+				"allowAdditionally": {
+				  "pkg/domain4": ["pkg/domain3"],
+				  "cmd/exe1": ["pkg/domain1", "pkg/domain2"],
+				  "cmd/exe2": ["pkg/domain3", "pkg/domain4"]
+				},
+				"noGod": true
+			}`,
 			expectedErrors: 0,
 		},
 	}
 
 	for _, spec := range specs {
 		t.Run(spec.name, func(t *testing.T) {
-			cfg := config.Parse(spec.givenArgs, "")
+			cfg, err := config.Parse([]byte(spec.givenConfig), spec.name)
+			if err != nil {
+				t.Fatalf("got unexpected error: %v", err)
+			}
 
 			pkgs, err := parse.DirTree(mustAbs(filepath.Join("testdata", spec.givenRoot)))
 			if err != nil {
