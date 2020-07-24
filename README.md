@@ -55,15 +55,7 @@ about this topic.
 Finally you can run `go mod vendor` if that is what you like.
 
 
-## Usage
-
-You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
-from anywhere inside your project.
-This will most likely give you some error messages and an exit code bigger than
-zero because you didn't configure the `spaghetti-cutter` yet.
-
-
-### Standard Use Case: Web API
+## Standard Use Case: Web API
 
 This tool was especially created with Web APIs in mind as that is what about
 95% of all Gophers do according to my own totally unscientifical research.
@@ -78,29 +70,40 @@ So it offers special handling for the following cases:
 - God: A god package can see and use everything. You should use this with great
   care. `main` is the only default god package used if no explicit package is
   given. You should only rarely add more.  You can switch `main` to a standard
-  package with the `no-god` switch. This makes sense if you have got multiple
-  `main` packages with different dependencies.
+  package with the `noGod` configuration key. This makes sense if you have got
+  multiple `main` packages with different dependencies.
 
-Any of these rules can be overwritten with an explicit `allow` directive.
+These cases needn't be used and can be overwritten with explicit configuration.
+
+
+## Usage
+
+You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
+from anywhere inside your project.
+This will give you an error messages and an exit code bigger than
+zero because you didn't configure the `spaghetti-cutter` yet.
+This is the way is is preventing spaghetti code.
+So it really is more a spaghetti preventer than a spaghetti cutter but
+that wouldn't give a nice title nor a nice image.
 
 
 ### Configuration
 
-It is strongly recommended to use a JSON configuration file
-`.spaghetti-cutter.json` in the root directory of your project.
+It is mandatory to use a JSON configuration file `.spaghetti-cutter.json` in
+the root directory of your project.
 This serves multiple purposes:
 - It helps the `spaghetti-cutter` to find the root directory of your project.
 - It saves you from retyping command line options again and again.
-- It documents the structure within the project.
+- It is valuable documentation especially for developers new to the project.
 
 The configuration can have the following elements:
 - `tool`, `db` and `god` for tool, database and god packages as discussed above.
-- `allow`: for allowing additional dependencies.
+- `allowOnlyIn`: for restricting a package to be used only in some packages
+  (allow "key" package only in "value" packages).
+- `allowAdditionally`: for allowing additional dependencies (for "key" package
+  allow additionally "value" packages).
 - `size`: the maximum allowed size/complexity of a package. Default is `2048`.
-- `no-god`: `main` won't be god package.
-- `ignore-vendor`: ignore vendor directories when searching for the project root
-- `root`: explicit project root. Should be given by the position of the config file instead.
-  (only makes sense as a command line argument).
+- `noGod`: `main` won't be god package.
 
 The size configuration key prevents a clever developer from just thowing all of
 the spaghetti code into a single package.
@@ -133,15 +136,17 @@ So this is another valid configuration file:
 }
 ```
 
-`*`, `**` and multiple values are allowed for the `tool`, `db`, `god` and `allow` keys.
+`*`, `**` and multiple values are allowed for the `tool`, `db`, `god`,
+`allowOnlyIn` and `allowAdditionally` keys.
 
-So a rather complex example looks like this:
+So a full example looks like this:
 ```json
 {
-	"tool": "pkg/x/*",
+	"allowOnlyIn": {"github.com/lib/pq": ["pkg/model", "pkg/postgres"]},
+	"allowAdditonally": {"pkg/shopping": ["pkg/catalogue", "pkg/cart"]},
+	"tool": ["pkg/x/*"],
 	"db": ["pkg/model", "pkg/postgres"],
-	"allow": ["pkg/shopping pkg/catalogue", "pkg/shopping pkg/cart"],
-	"god": "cmd/**",
+	"god": ["cmd/**"],
 	"size": 1024
 }
 ```
@@ -150,15 +155,14 @@ The `god` line shouldn't be necessary as all packages under `cmd/` should be `ma
 The case with multiple executables with different dependencies is interesting, too:
 ```json
 {
-	"tool": "pkg/x/*",
+	"tool": ["pkg/x/*"],
 	"db": ["pkg/model", "pkg/postgres"],
-	"allow": [
-		"cmd/front-end pkg/shopping",
-		"cmd/back-end pkg/catalogue",
-		"pkg/shopping pkg/catalogue",
-		"pkg/shopping pkg/cart"
-	],
-	"no-god": true,
+	"allowAdditionally": {
+		"cmd/front-end": ["pkg/shopping"],
+		"cmd/back-end": ["pkg/catalogue"],
+		"pkg/shopping": ["pkg/catalogue", "pkg/cart"]
+	},
+	"noGod": true,
 	"size": 1024
 }
 ```
@@ -166,51 +170,20 @@ Here we have got a front-end application for the shopping experience and a
 back-end application for updating the catalogue.
 
 ### Command line options
-Generally it is possible to override any configuration key with command line options.
-
-It is most useful to use these options on the command line:
-- `--ignore-vendor`: ignore vendor directories when searching for the project root.
-- `--root`: explicit project root. Should be given by the position of the config file instead.
-  So it only makes sense if you don't have got any configuration file at all or
-  you have to override a misplaced `go.mod` file.
-
-Unfortunately it is currently impossible to use the `--root` option to find the
-correct configuration file because the config file is searched before command
-line options are read.
-Instead the directory tree is crawled upward starting at the current working
-directory in order to find the `.spaghetti-cutter.json` file.
-I would be willing to change this if there is demand for it.
-
-If no `--root` option or `root` config key is given the root directory is found
-by crawling up the directory tree starting at the current working directory.
-The first directory that contains
-- the configuration file `.spaghetti-cutter.json` or
-- the Go module file `go.mod` or
-- a vendor directory `vendor` (if not prevented by `--ignore-vendor`)
-
-will be taken as project root.
 
 The possible command line options are:
 ```
 Usage of spaghetti-cutter:
-  -allow value
-     allowed package dependency (e.g. 'pkg/a/uses pkg/x/util')
-  -db value
-     common domain/database package (can only depend on tools) (e.g. 'pkg/*/db'; '*' matches anything except for a '/')
-  -god value
-     god package that can see everything (default: 'main')
-  -ignore-vendor
-     ignore any 'vendor' directory when searching the project root
-  -no-god
-     override default: 'main' won't be implicit god package
+  -r string
+        root directory of the project (shorthand) (default ".")
   -root string
-     project root directory
-  -size uint
-     maximum size of a package in "lines" (default 2048)
-  -tool value
-     tool package (leave package) (e.g. 'pkg/x/**'; '**' matches anything including a '/')
+        root directory of the project (default ".")
 ```
-They work exactly like the similar configuration keys and overwrite them.
+
+If no `--root` option is given the root directory is found
+by crawling up the directory tree starting at the current working directory.
+The first directory that contains the configuration file `.spaghetti-cutter.json`
+will be taken as project root.
 
 
 ## Best Practices
