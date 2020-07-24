@@ -1,12 +1,14 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/hjson/hjson-go"
 )
 
 // File is the name of the configuration file
@@ -89,6 +91,9 @@ func (pm *PatternMap) String() string {
 // MatchingList returns the PatternList if any key of this pattern map matches
 // the given string and nil otherwise.
 func (pm *PatternMap) MatchingList(s string) *PatternList {
+	if pm == nil {
+		return nil
+	}
 	for _, group := range *pm {
 		if group.left.regexp.MatchString(s) {
 			return group.right
@@ -108,6 +113,16 @@ type Config struct {
 	NoGod             bool
 }
 
+const (
+	keyAllowOnlyIn       = "allowOnlyIn"
+	keyAllowAdditionally = "allowAdditionally"
+	keyTool              = "tool"
+	keyDB                = "db"
+	keyGod               = "god"
+	keySize              = "size"
+	keyNoGod             = "noGod"
+)
+
 type jsonConfig struct {
 	AllowOnlyIn       map[string][]string `json:"allowOnlyIn,omitempty"`
 	AllowAdditionally map[string][]string `json:"allowAdditionally,omitempty"`
@@ -118,37 +133,46 @@ type jsonConfig struct {
 	NoGod             bool                `json:"noGod,omitempty"`
 }
 
-func convertFromJSON(jcfg jsonConfig) (Config, error) {
+func convertFromJSON(jcfg map[string]interface{}) (Config, error) {
 	var err error
+	var size uint
+	var noGod bool
 	var pl *PatternList
 	var pm *PatternMap
 
-	cfg := Config{
-		Size:  jcfg.Size,
-		NoGod: jcfg.NoGod,
-	}
+	cfg := Config{}
 
-	if pm, err = convertPatternMapFromJSON(jcfg.AllowOnlyIn); err != nil {
+	if size, err = convertUIntFromJSON(jcfg[keySize]); err != nil {
+		return Config{}, fmt.Errorf("unable to convert maximum package size from JSON: %w", err)
+	}
+	cfg.Size = size
+
+	if noGod, err = convertBoolFromJSON(jcfg[keyNoGod]); err != nil {
+		return Config{}, fmt.Errorf("unable to convert no-god flag from JSON: %w", err)
+	}
+	cfg.NoGod = noGod
+
+	if pm, err = convertPatternMapFromJSON(jcfg[keyAllowOnlyIn], keyAllowOnlyIn); err != nil {
 		return cfg, err
 	}
 	cfg.AllowOnlyIn = pm
 
-	if pm, err = convertPatternMapFromJSON(jcfg.AllowAdditionally); err != nil {
+	if pm, err = convertPatternMapFromJSON(jcfg[keyAllowAdditionally], keyAllowAdditionally); err != nil {
 		return cfg, err
 	}
 	cfg.AllowAdditionally = pm
 
-	if pl, err = convertPatternListFromJSON(jcfg.Tool); err != nil {
+	if pl, err = convertPatternListFromJSON(jcfg[keyTool], keyTool); err != nil {
 		return cfg, err
 	}
 	cfg.Tool = pl
 
-	if pl, err = convertPatternListFromJSON(jcfg.DB); err != nil {
+	if pl, err = convertPatternListFromJSON(jcfg[keyDB], keyDB); err != nil {
 		return cfg, err
 	}
 	cfg.DB = pl
 
-	if pl, err = convertPatternListFromJSON(jcfg.God); err != nil {
+	if pl, err = convertPatternListFromJSON(jcfg[keyGod], keyGod); err != nil {
 		return cfg, err
 	}
 	cfg.God = pl
@@ -156,17 +180,27 @@ func convertFromJSON(jcfg jsonConfig) (Config, error) {
 	return cfg, nil
 }
 
-func convertPatternMapFromJSON(m map[string][]string) (*PatternMap, error) {
+func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 	var err error
 	var pl *PatternList
 	var re *regexp.Regexp
+
+	if i == nil {
+		return nil, nil
+	}
+
+	m, ok := i.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("expected string map for key '%s', got type: %T", key, i)
+	}
+
 	pm := PatternMap(make(map[string]patternGroup, 16))
 
 	for k, v := range m {
 		if re, err = regexpForPattern(k); err != nil {
-			return nil, fmt.Errorf("unable to set left/key pattern %q: %w", k, err)
+			return nil, fmt.Errorf("illegal left/key pattern %q for global key '%s': %w", k, key, err)
 		}
-		if pl, err = convertPatternListFromJSON(v); err != nil {
+		if pl, err = convertPatternListFromJSON(v, key); err != nil {
 			return nil, err
 		}
 		pm[k] = patternGroup{
@@ -178,20 +212,86 @@ func convertPatternMapFromJSON(m map[string][]string) (*PatternMap, error) {
 	return &pm, nil
 }
 
-func convertPatternListFromJSON(s []string) (*PatternList, error) {
-	var err error
-	var pl PatternList
-	var re *regexp.Regexp
-
-	l := make([]Pattern, len(s))
-	for i, t := range s {
-		if re, err = regexpForPattern(t); err != nil {
-			return nil, fmt.Errorf("unable to use pattern `%s`: %w", t, err)
-		}
-		l[i] = Pattern{pattern: t, regexp: re}
+func convertPatternListFromJSON(i interface{}, key string) (*PatternList, error) {
+	if i == nil {
+		return nil, nil
 	}
-	pl = PatternList(l)
+
+	sl, ok := i.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("expected string list for key '%s', got type: %T", key, i)
+	}
+
+	l := make([]Pattern, len(sl))
+	for i, v := range sl {
+		s, err := convertStringFromJSON(v)
+		if err != nil {
+			return nil, fmt.Errorf("unable to convert list for key '%s' from JSON: %w", key, err)
+		}
+		re, err := regexpForPattern(s)
+		if err != nil {
+			return nil, fmt.Errorf("unable to use pattern `%s` of key '%s': %w", s, key, err)
+		}
+		l[i] = Pattern{pattern: s, regexp: re}
+	}
+	pl := PatternList(l)
 	return &pl, nil
+}
+
+func convertUIntFromJSON(i interface{}) (uint, error) {
+	var f float64
+	var ok bool
+
+	if i == nil {
+		return 0, nil
+	}
+
+	if f, ok = i.(float64); !ok {
+		return 0, fmt.Errorf("expected positive integer value, got type: %T", i)
+	}
+
+	if f < 0.0 {
+		return 0, fmt.Errorf("expected positive integer value, got negative: %f", f)
+	}
+
+	if f > math.MaxUint32 {
+		return 0, fmt.Errorf("expected unsigned integer value, got too large: %f", f)
+	}
+
+	if f != math.Trunc(f) {
+		return 0, fmt.Errorf("expected unsigned integer value, got float: %f", f)
+	}
+
+	return uint(f), nil
+}
+
+func convertBoolFromJSON(i interface{}) (bool, error) {
+	var b, ok bool
+
+	if i == nil {
+		return false, nil
+	}
+
+	if b, ok = i.(bool); !ok {
+		return false, fmt.Errorf("expected boolean value, got type: %T", i)
+	}
+
+	return b, nil
+}
+
+func convertStringFromJSON(i interface{}) (string, error) {
+	var s string
+	var ok bool
+
+	if i == nil {
+		return "", nil
+	}
+
+	if s, ok = i.(string); !ok {
+		return "", fmt.Errorf("expected string value, got type: %T", i)
+	}
+
+	return s, nil
 }
 
 func regexpForPattern(pattern string) (*regexp.Regexp, error) {
@@ -229,21 +329,25 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 // Parse parses the configuration bytes and uses cfgFile only for better error
 // messages.
 func Parse(cfgBytes []byte, cfgFile string) (Config, error) {
-	var err error
 	cfg := Config{}
-	jsonCfg := jsonConfig{}
-	if err = json.Unmarshal(cfgBytes, &jsonCfg); err != nil {
+	var jsonCfg map[string]interface{}
+
+	if err := hjson.Unmarshal(cfgBytes, &jsonCfg); err != nil {
 		return Config{}, fmt.Errorf("unable to unmarshal JSON configuration from file %q: %w", cfgFile, err)
 	}
 
-	if !jsonCfg.NoGod && len(jsonCfg.God) == 0 {
-		jsonCfg.God = []string{"main"} // default
-	}
-	if jsonCfg.Size == 0 {
-		jsonCfg.Size = 2048
+	noGod, _ := convertBoolFromJSON(jsonCfg[keyNoGod])
+	god, _ := convertPatternListFromJSON(jsonCfg[keyGod], keyGod)
+	if !noGod && (god == nil || len(*god) == 0) {
+		jsonCfg[keyGod] = []interface{}{"main"} // default
 	}
 
-	if cfg, err = convertFromJSON(jsonCfg); err != nil {
+	if size, _ := convertUIntFromJSON(jsonCfg[keySize]); size == 0 {
+		jsonCfg[keySize] = 2048.0
+	}
+
+	cfg, err := convertFromJSON(jsonCfg)
+	if err != nil {
 		return Config{}, err
 	}
 
