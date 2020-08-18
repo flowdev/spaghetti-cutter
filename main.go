@@ -53,13 +53,13 @@ func cut(args []string) int {
 		return 5
 	}
 
-	log.Printf("INFO - configuration AllowOnlyIn: %s", cfg.AllowOnlyIn)
-	log.Printf("INFO - configuration AllowAdditionally: %s", cfg.AllowAdditionally)
-	log.Printf("INFO - configuration God: %s", cfg.God)
-	log.Printf("INFO - configuration Tool: %s", cfg.Tool)
-	log.Printf("INFO - configuration DB: %s", cfg.DB)
-	log.Printf("INFO - configuration Size: %d", cfg.Size)
-	log.Printf("INFO - configuration NoGod: %t", cfg.NoGod)
+	log.Printf("INFO - configuration 'allowOnlyIn': %s", cfg.AllowOnlyIn)
+	log.Printf("INFO - configuration 'allowAdditionally': %s", cfg.AllowAdditionally)
+	log.Printf("INFO - configuration 'god': %s", cfg.God)
+	log.Printf("INFO - configuration 'tool': %s", cfg.Tool)
+	log.Printf("INFO - configuration 'db': %s", cfg.DB)
+	log.Printf("INFO - configuration 'size': %d", cfg.Size)
+	log.Printf("INFO - configuration 'noGod': %t", cfg.NoGod)
 
 	pkgs, err := parse.DirTree(root)
 	if err != nil {

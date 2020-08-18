@@ -12,7 +12,7 @@ import (
 )
 
 // File is the name of the configuration file
-const File = ".spaghetti-cutter.json"
+const File = ".spaghetti-cutter.hjson"
 
 // Pattern combines the original pattern string with a compiled regular
 // expression ready for efficient evaluation.
