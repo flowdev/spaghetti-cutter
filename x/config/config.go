@@ -45,15 +45,29 @@ func (pl *PatternList) String() string {
 // MatchString returns true if any of the patterns in the pattern list matches
 // the given string and false otherwise.
 func (pl *PatternList) MatchString(s string) bool {
+	match, _ := pl.FindString(s)
+	return match
+}
+
+// FindString returns true for fullmatch if any of the patterns in the
+// list matches the given string completely and for halfmatch if any of the
+// patterns in the list matches the start of the given string.
+func (pl *PatternList) FindString(s string) (full bool, match string) {
 	if pl == nil {
-		return false
+		return false, ""
 	}
 	for _, p := range *pl {
-		if p.regexp.MatchString(s) {
-			return true
+		m := p.regexp.FindString(s)
+		if m != "" {
+			if len(m) == len(s) {
+				return true, m
+			}
+			if len(m) > len(match) {
+				match = m
+			}
 		}
 	}
-	return false
+	return false, match
 }
 
 type patternGroup struct {
@@ -322,7 +336,7 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 	if i >= 0 {
 		b.WriteString(".*")
 	}
-	re := "^" + b.String() + "$"
+	re := "^" + b.String()
 	return regexp.Compile(re)
 }
 

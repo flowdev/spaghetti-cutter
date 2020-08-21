@@ -50,7 +50,7 @@ func TestCheck(t *testing.T) {
 			name:      "allowOnlyIn-config-complex-proj",
 			givenRoot: "complex-proj",
 			givenConfig: `{
-				"allowOnlyIn": {"pkg/domain3": ["pkg/domain4"]},
+				"allowOnlyIn": {"pkg/domain3": ["pkg/domain4", "cmd/exe2"]},
 				"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
 			}`,
 			expectedErrors: 0,
@@ -58,7 +58,7 @@ func TestCheck(t *testing.T) {
 			name:      "bad-allowOnlyIn-config-complex-proj",
 			givenRoot: "complex-proj",
 			givenConfig: `{
-				"allowOnlyIn": {"pkg/domain3": ["pkg/domain1"]},
+				"allowOnlyIn": {"pkg/domain3": ["pkg/domain1", "cmd/exe2"]},
 				"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
 			}`,
 			expectedErrors: 1,
