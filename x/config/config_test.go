@@ -218,6 +218,11 @@ func TestPatternListMatchString(t *testing.T) {
 			expectedMatches:   []string{"a/foob/candy/d", "a/b/c/d"},
 			expectedNoMatches: []string{"a/foo/candy/d", "a/foob/c/de"},
 		}, {
+			name:              "escaped-star",
+			givenPatterns:     []string{"a/\\\\*/b"},
+			expectedMatches:   []string{"a/*/b"},
+			expectedNoMatches: []string{"a/bla/b", "a//b"},
+		}, {
 			name:              "double-stars",
 			givenPatterns:     []string{"a/**"},
 			expectedMatches:   []string{"a/foob/candy/d", "a/b/c/d/..."},
@@ -252,7 +257,7 @@ func TestPatternListMatchString(t *testing.T) {
 	}
 }
 
-func testPatternMap(t *testing.T) {
+func TestPatternMap(t *testing.T) {
 	specs := []struct {
 		name                string
 		givenJSON           string

@@ -7,6 +7,7 @@ import (
 	"github.com/flowdev/spaghetti-cutter/deps"
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/x/config"
+	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 
 func TestCheck(t *testing.T) {
@@ -75,6 +76,24 @@ func TestCheck(t *testing.T) {
 				"noGod": true
 			}`,
 			expectedErrors: 0,
+		}, {
+			name:           "standard-config-half-pkgs-proj",
+			givenRoot:      "half-pkgs-proj",
+			givenConfig:    `{tool: ["x/*"], db: ["db/*"]}`,
+			expectedErrors: 2,
+		}, {
+			name:      "explicit-config-half-pkgs-proj",
+			givenRoot: "half-pkgs-proj",
+			givenConfig: `{
+				tool: ["x/*"]
+				db: ["db/*"]
+				allowAdditionally: {
+					// they just grew out of bounds!
+					"x/tool": ["x/tool/subtool"]
+					"db/store": ["db/store/substore"]
+				}
+			}`,
+			expectedErrors: 0,
 		},
 	}
 
@@ -85,15 +104,15 @@ func TestCheck(t *testing.T) {
 				t.Fatalf("got unexpected error: %v", err)
 			}
 
-			pkgs, err := parse.DirTree(mustAbs(filepath.Join("testdata", spec.givenRoot)))
+			packs, err := parse.DirTree(mustAbs(filepath.Join("testdata", spec.givenRoot)))
 			if err != nil {
 				t.Fatalf("Fatal parse error: %v", err)
 			}
 
 			var errs []string
-			rootPkg := parse.RootPkg(pkgs)
+			rootPkg := parse.RootPkg(packs)
 			t.Logf("root package: %s", rootPkg)
-			for _, pkg := range pkgs {
+			for _, pkg := range pkgs.UniquePackages(packs) {
 				errs = addErrors(errs, deps.Check(pkg, rootPkg, cfg))
 			}
 			if len(errs) != spec.expectedErrors {

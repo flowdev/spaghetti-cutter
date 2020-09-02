@@ -47,6 +47,23 @@ func UniquePackageName(relPkg, strictRelPkg string) string {
 	return relPkg
 }
 
+// UniquePackages makes the given list of packages unique.
+func UniquePackages(pkgs []*packages.Package) []*packages.Package {
+	result := make([]*packages.Package, 0, len(pkgs))
+	pkgNames := make(map[string]struct{}, len(pkgs))
+
+	for _, pkg := range pkgs {
+		relPkg, strictRelPkg := RelativePackageName(pkg, "")
+		uniqPkg := UniquePackageName(relPkg, strictRelPkg)
+
+		if _, ok := pkgNames[uniqPkg]; !ok {
+			result = append(result, pkg)
+			pkgNames[uniqPkg] = struct{}{}
+		}
+	}
+	return result
+}
+
 // IsTestPackage returns true if the given package is a test package and false
 // otherwise.
 func IsTestPackage(pkg *packages.Package) bool {

@@ -12,6 +12,7 @@ import (
 	"github.com/flowdev/spaghetti-cutter/size"
 	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/dirs"
+	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 
 func main() {
@@ -61,16 +62,16 @@ func cut(args []string) int {
 	log.Printf("INFO - configuration 'size': %d", cfg.Size)
 	log.Printf("INFO - configuration 'noGod': %t", cfg.NoGod)
 
-	pkgs, err := parse.DirTree(root)
+	packs, err := parse.DirTree(root)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
 		return 6
 	}
 
 	var errs []error
-	rootPkg := parse.RootPkg(pkgs)
+	rootPkg := parse.RootPkg(packs)
 	log.Printf("INFO - root package: %s", rootPkg)
-	for _, pkg := range pkgs {
+	for _, pkg := range pkgs.UniquePackages(packs) {
 		errs = addErrors(errs, deps.Check(pkg, rootPkg, cfg))
 		errs = addErrors(errs, size.Check(pkg, rootPkg, cfg.Size))
 	}

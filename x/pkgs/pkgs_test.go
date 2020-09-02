@@ -40,6 +40,18 @@ func TestRelativePackageName(t *testing.T) {
 			givenPkgName:         "config",
 			expectedRelPkg:       "x/config",
 			expectedStrictRelPkg: "",
+		}, {
+			name:                 "test-package",
+			givenPkgPath:         "github.com/flowdev/spaghetti-cutter/x/config_test",
+			givenPkgName:         "config_test",
+			expectedRelPkg:       "x/config_test",
+			expectedStrictRelPkg: "",
+		}, {
+			name:                 "test-package-2",
+			givenPkgPath:         "github.com/flowdev/spaghetti-cutter/x/config.test",
+			givenPkgName:         "config.test",
+			expectedRelPkg:       "x/config",
+			expectedStrictRelPkg: "",
 		},
 	}
 
@@ -87,6 +99,39 @@ func TestUniquePackageName(t *testing.T) {
 			actualUniqPkg := pkgs.UniquePackageName(spec.givenRelPkg, spec.givenStrictRelPkg)
 			if actualUniqPkg != spec.expectedUniqPkg {
 				t.Errorf("expected %q, actual %q", spec.expectedUniqPkg, actualUniqPkg)
+			}
+		})
+	}
+}
+
+func TestUniquePackages(t *testing.T) {
+	specs := []struct {
+		name          string
+		givenPkgNames []string
+		givenPkgPaths []string
+		expectedLen   int
+	}{
+		{
+			name:          "standard package",
+			givenPkgNames: []string{"config", "config_test", "main", "config"},
+			givenPkgPaths: []string{"x/config", "x/config_test", "cmd/my_service/main.test", "x/config"},
+			expectedLen:   3,
+		},
+	}
+
+	for _, spec := range specs {
+		t.Run(spec.name, func(t *testing.T) {
+			packs := make([]*packages.Package, len(spec.givenPkgNames))
+			for i, name := range spec.givenPkgNames {
+				packs[i] = &packages.Package{
+					ID:      name,
+					Name:    name,
+					PkgPath: spec.givenPkgPaths[i],
+				}
+			}
+			uniqPkgs := pkgs.UniquePackages(packs)
+			if len(uniqPkgs) != spec.expectedLen {
+				t.Errorf("expected length %d, actual %d %v", spec.expectedLen, len(uniqPkgs), uniqPkgs)
 			}
 		})
 	}
