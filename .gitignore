@@ -16,4 +16,4 @@ spaghetti-cutter.windows
 *.out
 
 # temporary test files
-testdata/*/.spaghetti-cutter.json
+testdata/*/.spaghetti-cutter.hjson
