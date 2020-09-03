@@ -9,11 +9,18 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/flowdev/spaghetti-cutter)
 ![Twitter URL](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fflowdev%2Fspaghetti-cutter)
 
+
+## Overview
+
 `spaghetti-cutter` is a command line tool for CI/CD pipelines (and dev machines)
 that helps to prevent Go spaghetti code (a.k.a. big ball of mud).
 
 Thankfully in the Go world circular dependencies between packages are already prevented by the compiler.
 So this tool has to care only about additional undesired dependencies.
+
+I gave a talk that includes the motivation for this tool and some usage examples:
+[![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
+
 
 ## Installation
 
