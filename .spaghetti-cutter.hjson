@@ -1,13 +1,18 @@
 {
-	// "parse" is declared as a tool since it doesn't have any dependencies
-	tool: ["x/*", "parse"],
+	tool: ["x/*"],
 
 	// the "size" package prevents a smaller value
 	size: 1024
 
+	allowAdditionally: {
+		// package parse is allowed in API tests
+		// so we can test with real source code
+		"*_test": ["parse"]
+	}
+
 	// document and restrict usage of external packages
 	allowOnlyIn: {
 		"github.com/hjson/**": ["x/config"]
-		"golang.org/x/tools**": ["deps", "size", "parse*", "x/pkgs*"]
+		"golang.org/x/tools**": ["parse*", "x/pkgs*"]
 	}
 }

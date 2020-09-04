@@ -10,10 +10,13 @@ const pkgMain = "main"
 
 const testSuffix = ".test"
 
+// Define a type alias so other packages can save the import
+type Package = packages.Package
+
 // RelativePackageName return the package name relative towards the given root package.
 // relPkg can be `/`, `main` or a path like `pkg/x/mytool`.
 // strictRelPkg can be `/`, a path like `pkg/x/mytool` or empty.
-func RelativePackageName(pkg *packages.Package, rootPkg string) (relPkg, strictRelPkg string) {
+func RelativePackageName(pkg *Package, rootPkg string) (relPkg, strictRelPkg string) {
 	if !strings.HasPrefix(pkg.PkgPath, rootPkg) {
 		return pkg.PkgPath, ""
 	}
@@ -48,8 +51,8 @@ func UniquePackageName(relPkg, strictRelPkg string) string {
 }
 
 // UniquePackages makes the given list of packages unique.
-func UniquePackages(pkgs []*packages.Package) []*packages.Package {
-	result := make([]*packages.Package, 0, len(pkgs))
+func UniquePackages(pkgs []*Package) []*Package {
+	result := make([]*Package, 0, len(pkgs))
 	pkgNames := make(map[string]struct{}, len(pkgs))
 
 	for _, pkg := range pkgs {
@@ -66,7 +69,7 @@ func UniquePackages(pkgs []*packages.Package) []*packages.Package {
 
 // IsTestPackage returns true if the given package is a test package and false
 // otherwise.
-func IsTestPackage(pkg *packages.Package) bool {
+func IsTestPackage(pkg *Package) bool {
 	result := strings.HasSuffix(pkg.PkgPath, "_test") ||
 		strings.HasSuffix(pkg.PkgPath, ".test") ||
 		strings.HasSuffix(pkg.ID, ".test]") ||

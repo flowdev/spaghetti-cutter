@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/flowdev/spaghetti-cutter/parse"
-	"golang.org/x/tools/go/packages"
+	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 
 func TestDirTree(t *testing.T) {
@@ -58,10 +58,10 @@ func TestDirTree(t *testing.T) {
 		})
 	}
 }
-func packagesAsString(pkgs []*packages.Package) string {
-	strPkgs := make([]string, len(pkgs))
+func packagesAsString(packs []*pkgs.Package) string {
+	strPkgs := make([]string, len(packs))
 
-	for i, p := range pkgs {
+	for i, p := range packs {
 		strPkgs[i] = p.Name + ": " + p.PkgPath
 		if isTestPkg(p) {
 			strPkgs[i] += " [T]"
@@ -111,12 +111,12 @@ func TestRootPkg(t *testing.T) {
 	}
 }
 
-func pkgsForPaths(paths []string) []*packages.Package {
-	pkgs := make([]*packages.Package, len(paths))
+func pkgsForPaths(paths []string) []*pkgs.Package {
+	packs := make([]*pkgs.Package, len(paths))
 	for i, path := range paths {
-		pkgs[i] = &packages.Package{PkgPath: path}
+		packs[i] = &pkgs.Package{PkgPath: path}
 	}
-	return pkgs
+	return packs
 }
 
 func mustAbs(path string) string {
@@ -127,7 +127,7 @@ func mustAbs(path string) string {
 	return absPath
 }
 
-func isTestPkg(pkg *packages.Package) bool {
+func isTestPkg(pkg *pkgs.Package) bool {
 	return strings.HasSuffix(pkg.PkgPath, "_test") ||
 		strings.HasSuffix(pkg.PkgPath, ".test") ||
 		strings.HasSuffix(pkg.ID, ".test]") ||

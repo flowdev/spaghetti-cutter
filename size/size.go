@@ -6,12 +6,11 @@ import (
 	"log"
 
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
-	"golang.org/x/tools/go/packages"
 )
 
 // Check checks the complexity of the given package and reports if it is too
 // big.
-func Check(pkg *packages.Package, rootPkg string, maxSize uint) []error {
+func Check(pkg *pkgs.Package, rootPkg string, maxSize uint) []error {
 	if pkgs.IsTestPackage(pkg) {
 		return nil
 	}

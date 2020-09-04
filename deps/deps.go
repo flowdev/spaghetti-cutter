@@ -6,12 +6,11 @@ import (
 
 	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
-	"golang.org/x/tools/go/packages"
 )
 
 // Check checks the dependencies of the given package and reports offending
 // imports.
-func Check(pkg *packages.Package, rootPkg string, cfg config.Config) []error {
+func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config) []error {
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 
 	checkSpecial := checkStandard
@@ -42,7 +41,7 @@ func Check(pkg *packages.Package, rootPkg string, cfg config.Config) []error {
 }
 
 func checkPkg(
-	pkg *packages.Package,
+	pkg *pkgs.Package,
 	relPkg, strictRelPkg, rootPkg string,
 	cfg config.Config,
 	checkSpecial func(string, string, string, string, config.Config) error,

@@ -4,12 +4,13 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 	"golang.org/x/tools/go/packages"
 )
 
 // DirTree is parsing the whole directory tree starting at root
 // looking for Go packages and analyzing them.
-func DirTree(root string) ([]*packages.Package, error) {
+func DirTree(root string) ([]*pkgs.Package, error) {
 	parseCfg := &packages.Config{
 		Logf:  nil, // log.Printf (for debug), nil (for release)
 		Dir:   root,
@@ -30,7 +31,7 @@ func DirTree(root string) ([]*packages.Package, error) {
 // RootPkg returns the package path of the root package of all the given
 // packages.
 // It does so by returning the longest common prefix of all package paths.
-func RootPkg(pkgs []*packages.Package) string {
+func RootPkg(pkgs []*pkgs.Package) string {
 	root := ""
 	for _, pkg := range pkgs {
 		if root == "" {
