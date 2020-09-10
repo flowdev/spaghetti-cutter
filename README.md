@@ -98,7 +98,10 @@ So this is another valid configuration file:
 So a full example looks like this:
 ```json
 {
-	"allowOnlyIn": {"github.com/lib/pq": ["pkg/model", "pkg/postgres"]},
+	"allowOnlyIn": {
+		"github.com/lib/pq": ["main"]
+		"github.com/jmoiron/sqlx": ["pkg/model", "pkg/postgres"]
+	},
 	"allowAdditonally": {"pkg/shopping": ["pkg/catalogue", "pkg/cart"]},
 	"tool": ["pkg/x/*"],
 	"db": ["pkg/model", "pkg/postgres"],
@@ -144,6 +147,50 @@ If no `--root` option is given the root directory is found
 by crawling up the directory tree starting at the current working directory.
 The first directory that contains the configuration file `.spaghetti-cutter.hjson`
 will be taken as project root.
+
+The output looks like:
+```
+2020/09/10 09:37:08 INFO - configuration 'allowOnlyIn': `github.com/hjson/**`: `x/config` ; `golang.org/x/tools**`: `parse*`, `x/pkgs*`
+2020/09/10 09:37:08 INFO - configuration 'allowAdditionally': `*_test`: `parse`
+2020/09/10 09:37:08 INFO - configuration 'god': `main`
+2020/09/10 09:37:08 INFO - configuration 'tool': `x/*`
+2020/09/10 09:37:08 INFO - configuration 'db': ...
+2020/09/10 09:37:08 INFO - configuration 'size': 1024
+2020/09/10 09:37:08 INFO - configuration 'noGod': false
+2020/09/10 09:37:08 INFO - root package: github.com/flowdev/spaghetti-cutter
+2020/09/10 09:37:08 INFO - Size of package 'x/config': 699
+2020/09/10 09:37:08 INFO - Size of package 'x/pkgs': 134
+2020/09/10 09:37:08 INFO - Size of package 'deps': 401
+2020/09/10 09:37:08 INFO - Size of package 'parse': 109
+2020/09/10 09:37:08 INFO - Size of package 'size': 838
+2020/09/10 09:37:08 INFO - Size of package 'x/dirs': 86
+2020/09/10 09:37:08 INFO - Size of package '/': 202
+2020/09/10 09:37:08 INFO - No errors found.
+```
+
+First the configuration values and the root package are reported.
+So you can easily ensure that the correct configuration file is taken.
+
+All package sizes are reported and last but not least any violations found.
+Since no error was found the return code is 0.
+
+A typical error message would be:
+```
+2020/09/10 10:31:14 ERROR - domain package 'pkg/shopping' isn't allowed to import package 'pkg/cart'
+```
+
+The return code is 1.
+From the output you can see that
+- the package `pkg/shopping` is recognized as standard domain package,
+- it imports the `pkg/cart` package and
+- there is no `allowAdditionally` configuration to allow this.
+
+You can fix that with a configuration line like:
+```json
+	"allowAdditonally": {"pkg/shopping": ["pkg/cart"]}
+```
+
+Other non-zero return codes are possible for technical problems (unparsable code: 6, ...).
 
 
 ## Installation
