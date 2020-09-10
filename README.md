@@ -92,7 +92,8 @@ So this is another valid configuration file:
 ```
 
 `*`, `**` and multiple values are allowed for the `tool`, `db`, `god`,
-`allowOnlyIn` and `allowAdditionally` keys.
+`allowOnlyIn` and `allowAdditionally` values.
+`*` and `**` are supported for `allowOnlyIn` and `allowAdditionally` keys, too.
 
 So a full example looks like this:
 ```json
