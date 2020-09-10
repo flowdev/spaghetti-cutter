@@ -22,45 +22,6 @@ I gave a talk that includes the motivation for this tool and some usage examples
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
 
-## Installation
-
-Of course you can just head over to the
-[latest release](https://github.com/flowdev/spaghetti-cutter/releases/latest)
-and grab a pre-built binary and change the extension for your OS.
-But that is difficult to keep in sync when collaborating with others in a team.
-
-A much better approach for teams goes this way:
-
-First include the latest version in your `go.mod` file, e.g.:
-```Go
-require (
-	github.com/flowdev/spaghetti-cutter v0.9
-)
-```
-
-Now add a file like the following to your main package.
-
-```Go
-//+build tools
-
-package main
-
-import (
-    _ "github.com/flowdev/spaghetti-cutter"
-)
-```
-
-Or add the import line to an existing file with similar build comment.
-This ensures that the package is indeed fetched and built but not included in
-the main or test executables. This is the
-[canonical workaround](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
-to keep everything in sync and lean.
-Here is a [talk by Robert Radestock](https://www.youtube.com/watch?v=PhBhwgYFuw0)
-about this topic.
-
-Finally you can run `go mod vendor` if that is what you like.
-
-
 ## Standard Use Case: Web API
 
 This tool was especially created with Web APIs in mind as that is what about
@@ -68,8 +29,7 @@ This tool was especially created with Web APIs in mind as that is what about
 
 So it offers special handling for the following cases:
 - Tools: Tool packages are allowed to be used everywhere else except in other
-  tool packages. But subpackages of a tool package are allowed to be used by
-  the parent tool package.
+  tool packages.
 - Database: DB packages are allowed to be used in other DB packages and
   standard (business) packages. Of course they can use tool packages.
   Domain data structures can be either `db` or `tool` packages.
@@ -82,20 +42,9 @@ So it offers special handling for the following cases:
 These cases needn't be used and can be overwritten with explicit configuration.
 
 
-## Usage
+## Configuration
 
-You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
-from anywhere inside your project.
-This will give you an error messages and an exit code bigger than
-zero because you didn't configure the `spaghetti-cutter` yet.
-This is the way is is preventing spaghetti code.
-So it really is more a spaghetti preventer than a spaghetti cutter but
-that wouldn't give a nice title nor a nice image.
-
-
-### Configuration
-
-It is mandatory to use a JSON configuration file `.spaghetti-cutter.json` in
+It is mandatory to use a JSON configuration file `.spaghetti-cutter.hjson` in
 the root directory of your project.
 This serves multiple purposes:
 - It helps the `spaghetti-cutter` to find the root directory of your project.
@@ -119,7 +68,7 @@ them as technical dept into your back log.
 This is a simple example configuration file:
 ```json
 {
-	"tool": "x/*"
+	"tool": ["x/*"]
 }
 ```
 All packages directly under `x` are tool packages that can be used everywhere else in the project.
@@ -127,7 +76,7 @@ All packages directly under `x` are tool packages that can be used everywhere el
 A slightly different variant is:
 ```json
 {
-	"tool": "x/**"
+	"tool": ["x/**"]
 }
 ```
 All packages under `x` are tool packages that can be used everywhere else in the project.
@@ -175,7 +124,11 @@ The case with multiple executables with different dependencies is interesting, t
 Here we have got a front-end application for the shopping experience and a
 back-end application for updating the catalogue.
 
-### Command line options
+
+## Usage
+
+You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
+from anywhere inside your project.
 
 The possible command line options are:
 ```
@@ -188,14 +141,67 @@ Usage of spaghetti-cutter:
 
 If no `--root` option is given the root directory is found
 by crawling up the directory tree starting at the current working directory.
-The first directory that contains the configuration file `.spaghetti-cutter.json`
+The first directory that contains the configuration file `.spaghetti-cutter.hjson`
 will be taken as project root.
+
+
+## Installation
+
+Of course you can just head over to the
+[latest release](https://github.com/flowdev/spaghetti-cutter/releases/latest)
+and grab a pre-built binary for your OS.
+But that is difficult to keep in sync when collaborating with others in a team.
+
+A much better approach for teams goes this way:
+
+First include the latest version in your `go.mod` file, e.g.:
+```Go
+require (
+	github.com/flowdev/spaghetti-cutter v0.9
+)
+```
+
+Now add a file like the following to your main package.
+
+```Go
+//+build tools
+
+package main
+
+import (
+    _ "github.com/flowdev/spaghetti-cutter"
+)
+```
+
+Or add the import line to an existing file with similar build comment.
+This ensures that the package is indeed fetched and built but not included in
+the main or test executables. This is the
+[canonical workaround](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
+to keep everything in sync and lean.
+Here is a [talk by Robert Radestock](https://www.youtube.com/watch?v=PhBhwgYFuw0)
+about this topic.
+
+Finally you can run `go mod vendor` if that is what you like.
+
+
+## Open Decisions
+
+1. `**` is currently only allowed at the end of a pattern.
+   It is technically possible to allow `**` in the middle of a pattern even though it matches anything.
+   This would even allow multiple `**` in a single pattern (so `**` would be like `*` but also matching `/`).
+1. Subpackages of a tool package aren't automatically allowed to be used in the parent tool package.
+   The now necessary `allowAdditionally` configuration gives a chance to explain
+   why the tool package needs subpackages at all and how the packages are structured.
+1. The same holds for subpackages of DB packages.
+
+According to feedback from the community I am open to change the decisions.
+The current configuration is compatible as unnecessary `allowAdditionally` entries are no problem.
 
 
 ## Best Practices
 
 For web APIs it is useful to split into independent business packages at router level.
-Router itself can be in a central (god) package. The split can be done in two ways:
+The router itself should be in a central (god) package. The split can be done in two ways:
 1. The central router calls handlers that reside in the business packages.
 1. The central router composes itself from subrouters in business packages.
 
@@ -205,7 +211,7 @@ But it also adds the concept of subrouters that isn't used so widely and
 increasing cognitive load this way.
 Plus it makes it harder to find the implementation for a route.
 
-So I recommend to start with the first option and switch to the second if the
+So I recommend to start with the first option and switch to the second when the
 central router becomes too big to handle.
 
 
@@ -220,6 +226,7 @@ the shop front-end running.
 Please remember that Go is often used to consolidate many servers written in
 some script language. Often replacing ten script servers with a single Go
 instance saving a lot of hosting costs and operational work.
+Often a second main package for the front-end is the easiest way to go.
 
 Another good reason to split a service is when the data the different parts of
 the service work on is very or even completely different.
@@ -239,13 +246,13 @@ Such additional tools can go a long way before it makes sense to split a service
 ### Recommendation How To Split A Service If Really Useful
 
 I recommend to split a service if it is sure to be really useful by first
-looking at the package structure in `.spaghetti-cutter.json`.
-You wouldn't want to separate packages into own services if one package depends
-on the other as per `allow` directive.
-`tool` packages are a bit simpler since they tend change less often.
+looking at the package structure in `.spaghetti-cutter.hjson`.
+You would be careful to separate packages into own services if one domain package depends
+on another domain package per `allowAdditionally` directive.
+`tool` packages are a bit simpler since they tend to change less often.
 They should just serve a single purpose well.
 So they can be easily extracted into an external library or they can be copied
-if the reusage isn't driven by businss needs but more accidental.
+if the reusage isn't driven by business needs but more accidental.
 If some `tool` packages won't be used by all the services after the split you
 should take advantage of that.
 
@@ -255,9 +262,9 @@ Now it is time to find the weakest link between future services.
 You should consider all three types of links:
 - `tool` packages (least important),
 - database usage (quite important) and
-- `allow` directives (most important).
+- `allow` directives between domain packages (most important).
 
-When the weakes links are found it is great if you can even minimize these links.
+When the weakest links are found it is great if you can even minimize these links.
 Over time they tend to accumulate and some aren't really necessary anymore.
 It is often great to get a perspective from the business side about this.
 
