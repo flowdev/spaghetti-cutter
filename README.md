@@ -22,113 +22,6 @@ I gave a talk that includes the motivation for this tool and some usage examples
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
 
-## Standard Use Case: Web API
-
-This tool was especially created with Web APIs in mind as that is what about
-95% of all Gophers do according to my own totally unscientifical research.
-
-So it offers special handling for the following cases:
-- Tools: Tool packages are allowed to be used everywhere else except in other
-  tool packages.
-- Database: DB packages are allowed to be used in other DB packages and
-  standard (business) packages. Of course they can use tool packages.
-  Domain data structures can be either `db` or `tool` packages.
-- God: A god package can see and use everything. You should use this with great
-  care. `main` is the only default god package used if no explicit package is
-  given. You should only rarely add more.  You can switch `main` to a standard
-  package with the `noGod` configuration key. This makes sense if you have got
-  multiple `main` packages with different dependencies.
-
-These cases needn't be used and can be overwritten with explicit configuration.
-
-
-## Configuration
-
-It is mandatory to use a JSON configuration file `.spaghetti-cutter.hjson` in
-the root directory of your project.
-This serves multiple purposes:
-- It helps the `spaghetti-cutter` to find the root directory of your project.
-- It saves you from retyping command line options again and again.
-- It is valuable documentation especially for developers new to the project.
-
-The configuration can have the following elements:
-- `tool`, `db` and `god` for tool, database and god packages as discussed above.
-- `allowOnlyIn`: for restricting a package to be used only in some packages
-  (allow "key" package only in "value" packages).
-- `allowAdditionally`: for allowing additional dependencies (for "key" package
-  allow additionally "value" packages).
-- `size`: the maximum allowed size/complexity of a package. Default is `2048`.
-- `noGod`: `main` won't be god package.
-
-The size configuration key prevents a clever developer from just thowing all of
-the spaghetti code into a single package.
-With the `spaghetti-cutter` such things will become obvious and you can put
-them as technical dept into your back log.
-
-This is a simple example configuration file:
-```json
-{
-	"tool": ["x/*"]
-}
-```
-All packages directly under `x` are tool packages that can be used everywhere else in the project.
-
-A slightly different variant is:
-```json
-{
-	"tool": ["x/**"]
-}
-```
-All packages under `x` are tool packages that can be used everywhere else in the project.
-So the `**` makes all sub-packages tool packages, too.
-In most cases one level is enough.
-
-Multiple values are possible for a single key.
-So this is another valid configuration file:
-```json
-{
-	"tool": ["x/*", "parse"]
-}
-```
-
-`*`, `**` and multiple values are allowed for the `tool`, `db`, `god`,
-`allowOnlyIn` and `allowAdditionally` values.
-`*` and `**` are supported for `allowOnlyIn` and `allowAdditionally` keys, too.
-
-So a full example looks like this:
-```json
-{
-	"allowOnlyIn": {
-		"github.com/lib/pq": ["main"]
-		"github.com/jmoiron/sqlx": ["pkg/model", "pkg/postgres"]
-	},
-	"allowAdditonally": {"pkg/shopping": ["pkg/catalogue", "pkg/cart"]},
-	"tool": ["pkg/x/*"],
-	"db": ["pkg/model", "pkg/postgres"],
-	"god": ["cmd/**"],
-	"size": 1024
-}
-```
-The `god` line shouldn't be necessary as all packages under `cmd/` should be `main` packages.
-
-The case with multiple executables with different dependencies is interesting, too:
-```json
-{
-	"tool": ["pkg/x/*"],
-	"db": ["pkg/model", "pkg/postgres"],
-	"allowAdditionally": {
-		"cmd/front-end": ["pkg/shopping"],
-		"cmd/back-end": ["pkg/catalogue"],
-		"pkg/shopping": ["pkg/catalogue", "pkg/cart"]
-	},
-	"noGod": true,
-	"size": 1024
-}
-```
-Here we have got a front-end application for the shopping experience and a
-back-end application for updating the catalogue.
-
-
 ## Usage
 
 You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
@@ -186,11 +79,121 @@ From the output you can see that
 - there is no `allowAdditionally` configuration to allow this.
 
 You can fix that with a configuration line like:
-```json
+```hjson
 	"allowAdditonally": {"pkg/shopping": ["pkg/cart"]}
 ```
 
 Other non-zero return codes are possible for technical problems (unparsable code: 6, ...).
+If used properly in the build pipeline a non-zero return code will stop the
+build and the problem has to be fixed first.
+So undesired imports (spaghetti) are prevented.
+
+
+## Standard Use Case: Web API
+
+This tool was especially created with Web APIs in mind as that is what about
+95% of all Gophers do according to my own totally unscientifical research.
+
+So it offers special handling for the following cases:
+- Tools: Tool packages are allowed to be used everywhere else except in other
+  tool packages.
+- Database: DB packages are allowed to be used in other DB packages and
+  standard (business) packages. Of course they can use tool packages.
+  Domain data structures can be either `db` or `tool` packages.
+- God: A god package can see and use everything. You should use this with great
+  care. `main` is the only default god package used if no explicit package is
+  given. You should only rarely add more.  You can switch `main` to a standard
+  package with the `noGod` configuration key. This makes sense if you have got
+  multiple `main` packages with different dependencies.
+
+These cases needn't be used and can be overwritten with explicit configuration.
+
+
+## Configuration
+
+It is mandatory to use a HJSON configuration file `.spaghetti-cutter.hjson` in
+the root directory of your project.
+This serves multiple purposes:
+- It helps the `spaghetti-cutter` to find the root directory of your project.
+- It saves you from retyping command line options again and again.
+- It is valuable documentation especially for developers new to the project.
+
+The configuration can have the following elements:
+- `tool`, `db` and `god` for tool, database and god packages as discussed above.
+- `allowOnlyIn`: for restricting a package to be used only in some packages
+  (allow "key" package only in "value" packages).
+- `allowAdditionally`: for allowing additional dependencies (for "key" package
+  allow additionally "value" packages).
+- `size`: the maximum allowed size/complexity of a package. Default is `2048`.
+- `noGod`: `main` won't be god package.
+
+The size configuration key prevents a clever developer from just thowing all of
+the spaghetti code into a single package.
+With the `spaghetti-cutter` such things will become obvious and you can put
+them as technical dept into your back log.
+
+This is a simple example configuration file:
+```hjson
+{
+	"tool": ["x/*"]
+}
+```
+All packages directly under `x` are tool packages that can be used everywhere else in the project.
+
+A slightly different variant is:
+```hjson
+{
+	"tool": ["x/**"]
+}
+```
+All packages under `x` are tool packages that can be used everywhere else in the project.
+So the `**` makes all sub-packages tool packages, too.
+In most cases one level is enough.
+
+Multiple values are possible for a single key.
+So this is another valid configuration file:
+```hjson
+{
+	"tool": ["x/*", "parse"]
+}
+```
+
+`*`, `**` and multiple values are allowed for the `tool`, `db`, `god`,
+`allowOnlyIn` and `allowAdditionally` values.
+`*` and `**` are supported for `allowOnlyIn` and `allowAdditionally` keys, too.
+
+So a full example looks like this:
+```hjson
+{
+	"allowOnlyIn": {
+		"github.com/lib/pq": ["main"]
+		"github.com/jmoiron/sqlx": ["pkg/model", "pkg/postgres"]
+	},
+	"allowAdditonally": {"pkg/shopping": ["pkg/catalogue", "pkg/cart"]},
+	"tool": ["pkg/x/*"],
+	"db": ["pkg/model", "pkg/postgres"],
+	"god": ["cmd/**"],
+	"size": 1024
+}
+```
+The `god` line shouldn't be necessary as all packages under `cmd/` should be `main` packages.
+
+The case with multiple executables with different dependencies is interesting, too:
+```hjson
+{
+	"tool": ["pkg/x/*"],
+	"db": ["pkg/model", "pkg/postgres"],
+	"allowAdditionally": {
+		"cmd/front-end": ["pkg/shopping"],
+		"cmd/back-end": ["pkg/catalogue"],
+		"pkg/shopping": ["pkg/catalogue", "pkg/cart"]
+	},
+	"noGod": true,
+	"size": 1024
+}
+```
+Here we have got a front-end application for the shopping experience and a
+back-end application for updating the catalogue.
 
 
 ## Installation
