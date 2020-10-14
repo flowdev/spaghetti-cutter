@@ -240,10 +240,9 @@ Finally you can run `go mod vendor` if that is what you like.
 1. `**` is currently only allowed at the end of a pattern.
    It is technically possible to allow `**` in the middle of a pattern even though it matches anything.
    This would even allow multiple `**` in a single pattern (so `**` would be like `*` but also matching `/`).
-1. Subpackages of a tool package aren't automatically allowed to be used in the parent tool package.
-   The now necessary `allowAdditionally` configuration gives a chance to explain
-   why the tool package needs subpackages at all and how the packages are structured.
-1. The same holds for subpackages of DB packages.
+1. It would be possible to support variables for the `allowOnlyIn` and `allowAdditionally` cases.
+   This would allow to match a part of the key and enforce it in the value, e.g.:
+   `"allowAdditonally": {"pkg/x/$*1": ["pkg/x/$1/**"]}` to allow tool packages to import their own sub-packages.
 
 According to feedback from the community I am open to change the decisions.
 The current configuration is compatible as unnecessary `allowAdditionally` entries are no problem.
