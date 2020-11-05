@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -102,18 +101,18 @@ func (pm *PatternMap) String() string {
 	return s[:len(s)-3]
 }
 
-// MatchingList returns the PatternList if any key of this pattern map matches
-// the given string and nil otherwise.
-func (pm *PatternMap) MatchingList(s string) *PatternList {
+// MatchingList returns the PatternList and submatches in the key if any key of
+// this pattern map matches the given string and nil otherwise.
+func (pm *PatternMap) MatchingList(s string) (*PatternList, []string) {
 	if pm == nil {
-		return nil
+		return nil, nil
 	}
 	for _, group := range *pm {
-		if group.left.regexp.MatchString(s) {
-			return group.right
+		if m := group.left.regexp.FindStringSubmatch(s); len(m) > 0 {
+			return group.right, m[1:]
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // Config contains the parsed configuration.
@@ -208,13 +207,13 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 		return nil, fmt.Errorf("expected string map for key '%s', got type: %T", key, i)
 	}
 
-	pm := PatternMap(make(map[string]patternGroup, 16))
+	pm := PatternMap(make(map[string]patternGroup, len(m)))
 
 	for k, v := range m {
 		if re, err = regexpForPattern(k); err != nil {
 			return nil, fmt.Errorf("illegal left/key pattern %q for global key '%s': %w", k, key, err)
 		}
-		if pl, err = convertPatternListFromJSON(v, key); err != nil {
+		if pl, err = convertPatternListFromJSON(v, key+": "+k); err != nil {
 			return nil, err
 		}
 		pm[k] = patternGroup{
@@ -309,35 +308,61 @@ func convertStringFromJSON(i interface{}) (string, error) {
 }
 
 func regexpForPattern(pattern string) (*regexp.Regexp, error) {
-	i := strings.Index(pattern, "**")
-	n2 := len(pattern) - 2
-	if i >= 0 && i < n2 {
-		return nil, errors.New("illegal pattern `" + pattern + "` contains `**` before the end")
-	}
-	if i >= 0 {
-		pattern = pattern[:i]
-	}
-	b := strings.Builder{}
-	parts := strings.Split(pattern, "*")
-	n := len(parts) - 1
-	for j, s := range parts {
-		if j < n {
-			if len(s) > 0 && s[len(s)-1] == '\\' {
-				b.WriteString(regexp.QuoteMeta(s[:len(s)-1]))
-				b.WriteString("\\*")
-			} else {
-				b.WriteString(regexp.QuoteMeta(s))
-				b.WriteString("[^/]*")
-			}
-		} else {
-			b.WriteString(regexp.QuoteMeta(s))
+	const dollarErrorText = "a '$' has to be escaped or followed by one or two unescaped '*'s"
+	const singleStarPattern = `(?:[^/]*)`
+	re := regexp.MustCompile(`(?:\\?\$)?(?:\\?\*\*?)?`) // is constant and tested by ANY unit test
+	errText := ""
+
+	pattern = re.ReplaceAllStringFunc(pattern, func(s string) string {
+		if s == "" {
+			return s
 		}
+
+		if len(s) == 1 {
+			switch s {
+			case "$":
+				errText = dollarErrorText
+				return "<error>"
+			case "*":
+				return singleStarPattern
+			}
+		}
+
+		prefix := ``
+		if s[0] == '\\' && s[1] == '$' {
+			prefix = `\$`
+			s = s[2:]
+		}
+		if s == "" {
+			return prefix
+		}
+		if len(s) == 1 {
+			return prefix + singleStarPattern
+		}
+
+		if s[0] == '\\' {
+			if len(s) > 2 {
+				return prefix + `\*` + singleStarPattern
+			}
+			return prefix + `\*`
+		}
+		if s[0] == '$' {
+			if s[1] == '\\' {
+				errText = dollarErrorText
+				return `<error>`
+			}
+			if len(s) > 2 {
+				return `(.*)`
+			}
+			return `([^/]*)`
+		}
+		return prefix + `(?:.*)`
+	})
+
+	if errText != "" {
+		return nil, fmt.Errorf("%s; resulting regular expression: %s", errText, pattern)
 	}
-	if i >= 0 {
-		b.WriteString(".*")
-	}
-	re := "^" + b.String()
-	return regexp.Compile(re)
+	return regexp.Compile("^" + pattern + "$")
 }
 
 // Parse parses the configuration bytes and uses cfgFile only for better error
