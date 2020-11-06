@@ -370,6 +370,20 @@ func TestDollars(t *testing.T) {
 			givenRightPattern:   "d/bar/car/e/foo/f",
 			expectedKeyDollars:  []string{"foo", "bar/car"},
 			expectedRightString: "`d/$2/e/$1/f`",
+		}, {
+			name:                "use-not-all-dollars",
+			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e"]`,
+			givenLeftPattern:    "a/foo/b/bar/car/c",
+			givenRightPattern:   "d/bar/car/e",
+			expectedKeyDollars:  []string{"foo", "bar/car"},
+			expectedRightString: "`d/$2/e`",
+		}, {
+			name:                "use-no-dollars",
+			givenJSON:           `"a/$*/b/$**/c": ["d/e/f"]`,
+			givenLeftPattern:    "a/foo/b/bar/car/c",
+			givenRightPattern:   "d/e/f",
+			expectedKeyDollars:  []string{"foo", "bar/car"},
+			expectedRightString: "`d/e/f`",
 		},
 	}
 

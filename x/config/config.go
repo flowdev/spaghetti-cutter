@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"regexp"
 	"sort"
@@ -66,11 +65,6 @@ func (pl *PatternList) MatchString(s string, dollars []string) bool {
 	return false
 }
 func matchDollars(given, found []string, idxs []int) bool {
-	if len(given) != len(found) {
-		log.Printf("WARNING - configuration problem: the %d found dollar expressions %q don't fit to the %d given ones: %q",
-			len(found), found, len(given), given)
-		return false
-	}
 	for i, f := range found {
 		if f != given[idxs[i]] {
 			return false
@@ -221,7 +215,7 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 	pm := PatternMap(make(map[string]patternGroup, len(m)))
 
 	for k, v := range m {
-		if re, dollars, _, err = regexpForPattern(k, enumDollarStar); err != nil {
+		if re, dollars, _, err = regexpForPattern(k, enumDollarStar, 0); err != nil {
 			return nil, fmt.Errorf("illegal left/key pattern %q for global key '%s': %w", k, key, err)
 		}
 		if pl, err = convertPatternListFromJSON(v, key+": "+k, enumDollarDigit, dollars); err != nil {
@@ -252,14 +246,9 @@ func convertPatternListFromJSON(i interface{}, key string, allowDollar int, keyD
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert list for key '%s' from JSON: %w", key, err)
 		}
-		re, myDollars, dollarIdxs, err := regexpForPattern(s, allowDollar)
+		re, _, dollarIdxs, err := regexpForPattern(s, allowDollar, keyDollars)
 		if err != nil {
 			return nil, fmt.Errorf("unable to use pattern `%s` of key '%s': %w", s, key, err)
-		}
-		if myDollars != keyDollars {
-			return nil, fmt.Errorf(
-				"unable to use pattern `%s` of key '%s': the %d dollars in the key don't match the %d dollars in the value",
-				s, key, keyDollars, myDollars)
 		}
 		l[i] = Pattern{pattern: s, regexp: re, dollarIdxs: dollarIdxs}
 	}
@@ -323,7 +312,7 @@ func convertStringFromJSON(i interface{}) (string, error) {
 	return s, nil
 }
 
-func regexpForPattern(pattern string, allowDollar int) (*regexp.Regexp, int, []int, error) {
+func regexpForPattern(pattern string, allowDollar int, maxDollar int) (*regexp.Regexp, int, []int, error) {
 	const noDollarErrorText = "a '$' has to be escaped for this configuration key"
 	const dollarStarErrorText = "a '$' has to be escaped or followed by one or two unescaped '*'s"
 	const dollarDigitErrorText = "a '$' has to be escaped or followed by a single digit (1-9)"
@@ -416,13 +405,18 @@ func regexpForPattern(pattern string, allowDollar int) (*regexp.Regexp, int, []i
 			}
 
 			// DIGIT: remember index and capture the value
-			dollarIdxs = append(dollarIdxs, int(s[1]-'1'))
+			dollarIdx := int(s[1] - '1')
+			if dollarIdx >= maxDollar {
+				errText = fmt.Sprintf("the maximum possible dollar index is %d, found index %d", maxDollar, dollarIdx+1)
+				return `<error>`
+			}
+			dollarIdxs = append(dollarIdxs, dollarIdx)
 			return prefix + `(.*)`
 		}
 		if len(s) > 1 {
 			return prefix + doubleStarPattern
 		}
-		return prefix + `(?:[^/]*)`
+		return prefix + singleStarPattern
 	})
 
 	if errText != "" {
@@ -430,9 +424,6 @@ func regexpForPattern(pattern string, allowDollar int) (*regexp.Regexp, int, []i
 	}
 	re, err := regexp.Compile("^" + pattern + "$")
 	if dollarCount > 0 && allowDollar == enumDollarDigit {
-		if !checkDollarIdxs(dollarIdxs) {
-			return nil, 0, nil, fmt.Errorf("indices for '$' expressions aren't consecutive starting from 1; resulting regular expression: %s", pattern)
-		}
 		return re, dollarCount, dollarIdxs, err
 	}
 	return re, dollarCount, nil, err
@@ -446,21 +437,6 @@ func countBackslashes(s string) int {
 		count++
 	}
 	return count
-}
-func checkDollarIdxs(is []int) bool {
-	found := make([]bool, len(is))
-	for _, i := range is {
-		if i >= len(found) {
-			return false
-		}
-		found[i] = true
-	}
-	for _, b := range found {
-		if !b {
-			return false
-		}
-	}
-	return true
 }
 
 // Parse parses the configuration bytes and uses cfgFile only for better error

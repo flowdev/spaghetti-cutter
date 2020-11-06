@@ -10,6 +10,7 @@ func TestRegexpForPattern(t *testing.T) {
 		name             string
 		givenPattern     string
 		givenAllowDollar int
+		givenMaxDollar   int
 		expectedDollars  int
 		expectedIdxs     []int
 		expectedRegexp   string
@@ -164,6 +165,7 @@ func TestRegexpForPattern(t *testing.T) {
 			name:             "dollar-digit",
 			givenPattern:     `ab$1cd`,
 			givenAllowDollar: enumDollarDigit,
+			givenMaxDollar:   1,
 			expectedDollars:  1,
 			expectedIdxs:     []int{0},
 			expectedRegexp:   `^ab(.*)cd$`,
@@ -172,6 +174,7 @@ func TestRegexpForPattern(t *testing.T) {
 			name:             "unescaped-dollar-digit",
 			givenPattern:     `ab\\\\$1cd`,
 			givenAllowDollar: enumDollarDigit,
+			givenMaxDollar:   1,
 			expectedDollars:  1,
 			expectedIdxs:     []int{0},
 			expectedRegexp:   `^ab\\\\(.*)cd$`,
@@ -180,6 +183,7 @@ func TestRegexpForPattern(t *testing.T) {
 			name:             "dollar-double-digit",
 			givenPattern:     `ab$11cd`,
 			givenAllowDollar: enumDollarDigit,
+			givenMaxDollar:   1,
 			expectedDollars:  1,
 			expectedIdxs:     []int{0},
 			expectedRegexp:   `^ab(.*)1cd$`,
@@ -188,6 +192,7 @@ func TestRegexpForPattern(t *testing.T) {
 			name:             "escaped-dollar-digit",
 			givenPattern:     `ab\\\$3cd`,
 			givenAllowDollar: enumDollarDigit,
+			givenMaxDollar:   1,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\$3cd$`,
 			expectedError:    false,
@@ -195,6 +200,7 @@ func TestRegexpForPattern(t *testing.T) {
 			name:             "many-dollars",
 			givenPattern:     `a$3b$1c$2d`,
 			givenAllowDollar: enumDollarDigit,
+			givenMaxDollar:   3,
 			expectedDollars:  3,
 			expectedIdxs:     []int{2, 0, 1},
 			expectedRegexp:   `^a(.*)b(.*)c(.*)d$`,
@@ -256,7 +262,7 @@ func TestRegexpForPattern(t *testing.T) {
 	for _, spec := range specs {
 		t.Run(spec.name, func(t *testing.T) {
 			t.Logf("pattern=%q, allowedDollar=%d", spec.givenPattern, spec.givenAllowDollar)
-			actualRegexp, actualDollars, actualIdxs, err := regexpForPattern(spec.givenPattern, spec.givenAllowDollar)
+			actualRegexp, actualDollars, actualIdxs, err := regexpForPattern(spec.givenPattern, spec.givenAllowDollar, spec.givenMaxDollar)
 			testOn := checkError(t, err, spec.expectedError)
 			if !testOn {
 				return
