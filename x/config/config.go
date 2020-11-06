@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"regexp"
 	"sort"
@@ -13,11 +14,19 @@ import (
 // File is the name of the configuration file
 const File = ".spaghetti-cutter.hjson"
 
+// internal enum for '$' handling in patterns
+const (
+	enumNoDollar    = iota // '$' isn't allowed at all
+	enumDollarStar         // '$' has to be followed by one or two '*'
+	enumDollarDigit        // '$' has to be followed by a single digit (1-9)
+)
+
 // Pattern combines the original pattern string with a compiled regular
 // expression ready for efficient evaluation.
 type Pattern struct {
-	pattern string
-	regexp  *regexp.Regexp
+	pattern    string
+	regexp     *regexp.Regexp
+	dollarIdxs []int
 }
 
 // PatternList is a slice of the Pattern type.
@@ -42,31 +51,32 @@ func (pl *PatternList) String() string {
 }
 
 // MatchString returns true if any of the patterns in the pattern list matches
-// the given string and false otherwise.
-func (pl *PatternList) MatchString(s string) bool {
-	match, _ := pl.FindString(s)
-	return match
-}
-
-// FindString returns true for fullmatch if any of the patterns in the
-// list matches the given string completely and for halfmatch if any of the
-// patterns in the list matches the start of the given string.
-func (pl *PatternList) FindString(s string) (full bool, match string) {
+// the given string including its dollars and false otherwise.
+func (pl *PatternList) MatchString(s string, dollars []string) bool {
 	if pl == nil {
-		return false, ""
+		return false
 	}
 	for _, p := range *pl {
-		m := p.regexp.FindString(s)
-		if m != "" {
-			if len(m) == len(s) {
-				return true, m
-			}
-			if len(m) > len(match) {
-				match = m
+		if m := p.regexp.FindStringSubmatch(s); len(m) > 0 {
+			if matchDollars(dollars, m[1:], p.dollarIdxs) {
+				return true
 			}
 		}
 	}
-	return false, match
+	return false
+}
+func matchDollars(given, found []string, idxs []int) bool {
+	if len(given) != len(found) {
+		log.Printf("WARNING - configuration problem: the %d found dollar expressions %q don't fit to the %d given ones: %q",
+			len(found), found, len(given), given)
+		return false
+	}
+	for i, f := range found {
+		if f != given[idxs[i]] {
+			return false
+		}
+	}
+	return true
 }
 
 type patternGroup struct {
@@ -175,17 +185,17 @@ func convertFromJSON(jcfg map[string]interface{}) (Config, error) {
 	}
 	cfg.AllowAdditionally = pm
 
-	if pl, err = convertPatternListFromJSON(jcfg[keyTool], keyTool); err != nil {
+	if pl, err = convertPatternListFromJSON(jcfg[keyTool], keyTool, enumNoDollar, 0); err != nil {
 		return cfg, err
 	}
 	cfg.Tool = pl
 
-	if pl, err = convertPatternListFromJSON(jcfg[keyDB], keyDB); err != nil {
+	if pl, err = convertPatternListFromJSON(jcfg[keyDB], keyDB, enumNoDollar, 0); err != nil {
 		return cfg, err
 	}
 	cfg.DB = pl
 
-	if pl, err = convertPatternListFromJSON(jcfg[keyGod], keyGod); err != nil {
+	if pl, err = convertPatternListFromJSON(jcfg[keyGod], keyGod, enumNoDollar, 0); err != nil {
 		return cfg, err
 	}
 	cfg.God = pl
@@ -197,6 +207,7 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 	var err error
 	var pl *PatternList
 	var re *regexp.Regexp
+	var dollars int
 
 	if i == nil {
 		return nil, nil
@@ -210,10 +221,10 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 	pm := PatternMap(make(map[string]patternGroup, len(m)))
 
 	for k, v := range m {
-		if re, err = regexpForPattern(k); err != nil {
+		if re, dollars, _, err = regexpForPattern(k, enumDollarStar); err != nil {
 			return nil, fmt.Errorf("illegal left/key pattern %q for global key '%s': %w", k, key, err)
 		}
-		if pl, err = convertPatternListFromJSON(v, key+": "+k); err != nil {
+		if pl, err = convertPatternListFromJSON(v, key+": "+k, enumDollarDigit, dollars); err != nil {
 			return nil, err
 		}
 		pm[k] = patternGroup{
@@ -225,7 +236,7 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 	return &pm, nil
 }
 
-func convertPatternListFromJSON(i interface{}, key string) (*PatternList, error) {
+func convertPatternListFromJSON(i interface{}, key string, allowDollar int, keyDollars int) (*PatternList, error) {
 	if i == nil {
 		return nil, nil
 	}
@@ -241,11 +252,16 @@ func convertPatternListFromJSON(i interface{}, key string) (*PatternList, error)
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert list for key '%s' from JSON: %w", key, err)
 		}
-		re, err := regexpForPattern(s)
+		re, myDollars, dollarIdxs, err := regexpForPattern(s, allowDollar)
 		if err != nil {
 			return nil, fmt.Errorf("unable to use pattern `%s` of key '%s': %w", s, key, err)
 		}
-		l[i] = Pattern{pattern: s, regexp: re}
+		if myDollars != keyDollars {
+			return nil, fmt.Errorf(
+				"unable to use pattern `%s` of key '%s': the %d dollars in the key don't match the %d dollars in the value",
+				s, key, keyDollars, myDollars)
+		}
+		l[i] = Pattern{pattern: s, regexp: re, dollarIdxs: dollarIdxs}
 	}
 	pl := PatternList(l)
 	return &pl, nil
@@ -307,11 +323,16 @@ func convertStringFromJSON(i interface{}) (string, error) {
 	return s, nil
 }
 
-func regexpForPattern(pattern string) (*regexp.Regexp, error) {
-	const dollarErrorText = "a '$' has to be escaped or followed by one or two unescaped '*'s"
+func regexpForPattern(pattern string, allowDollar int) (*regexp.Regexp, int, []int, error) {
+	const noDollarErrorText = "a '$' has to be escaped for this configuration key"
+	const dollarStarErrorText = "a '$' has to be escaped or followed by one or two unescaped '*'s"
+	const dollarDigitErrorText = "a '$' has to be escaped or followed by a single digit (1-9)"
 	const singleStarPattern = `(?:[^/]*)`
-	re := regexp.MustCompile(`(?:\\?\$)?(?:\\?\*\*?)?`) // is constant and tested by ANY unit test
+	const doubleStarPattern = `(?:.*)`
+	re := regexp.MustCompile(`(?:\\*\$)?(?:\\*\*\*?|[1-9])?`) // constant and tested by ANY unit test
 	errText := ""
+	dollarCount := 0
+	dollarIdxs := make([]int, 0, 9)
 
 	pattern = re.ReplaceAllStringFunc(pattern, func(s string) string {
 		if s == "" {
@@ -321,48 +342,125 @@ func regexpForPattern(pattern string) (*regexp.Regexp, error) {
 		if len(s) == 1 {
 			switch s {
 			case "$":
-				errText = dollarErrorText
+				switch allowDollar {
+				case enumNoDollar:
+					errText = noDollarErrorText
+					break
+				case enumDollarStar:
+					errText = dollarStarErrorText
+					break
+				default:
+					errText = dollarDigitErrorText
+				}
 				return "<error>"
 			case "*":
 				return singleStarPattern
+			default:
+				return s
 			}
 		}
 
 		prefix := ``
-		if s[0] == '\\' && s[1] == '$' {
-			prefix = `\$`
-			s = s[2:]
+		if n := countBackslashes(s); n > 0 && len(s) > n && s[n] == '$' {
+			if n%2 == 0 { // even number of `\`: '$' is NOT escaped!
+				prefix = s[:n]
+				s = s[n:]
+			} else { // odd number of `\`: '$' is escaped
+				prefix = s[:n+1]
+				s = s[n+1:]
+			}
 		}
 		if s == "" {
 			return prefix
 		}
 		if len(s) == 1 {
-			return prefix + singleStarPattern
+			if s == "*" {
+				return prefix + singleStarPattern
+			}
+			return prefix + s // s is a digit
 		}
 
-		if s[0] == '\\' {
-			if len(s) > 2 {
-				return prefix + `\*` + singleStarPattern
+		if n := countBackslashes(s); n > 0 {
+			if n%2 == 0 { // even number of `\`: '*' is NOT escaped!
+				prefix += s[:n]
+				s = s[n:]
+			} else { // odd number of `\`: '*' is escaped
+				prefix += s[:n+1]
+				s = s[n+1:]
+				if s == "" {
+					return prefix
+				}
 			}
-			return prefix + `\*`
 		}
 		if s[0] == '$' {
+			if allowDollar == enumNoDollar {
+				errText = noDollarErrorText
+				return "<error>"
+			}
 			if s[1] == '\\' {
-				errText = dollarErrorText
+				switch allowDollar {
+				case enumDollarStar:
+					errText = dollarStarErrorText
+					break
+				default:
+					errText = dollarDigitErrorText
+				}
 				return `<error>`
 			}
+			dollarCount++
 			if len(s) > 2 {
-				return `(.*)`
+				return prefix + `(.*)`
 			}
-			return `([^/]*)`
+			if s[1] == '*' {
+				return prefix + `([^/]*)`
+			}
+
+			// DIGIT: remember index and capture the value
+			dollarIdxs = append(dollarIdxs, int(s[1]-'1'))
+			return prefix + `(.*)`
 		}
-		return prefix + `(?:.*)`
+		if len(s) > 1 {
+			return prefix + doubleStarPattern
+		}
+		return prefix + `(?:[^/]*)`
 	})
 
 	if errText != "" {
-		return nil, fmt.Errorf("%s; resulting regular expression: %s", errText, pattern)
+		return nil, 0, nil, fmt.Errorf("%s; resulting regular expression: %s", errText, pattern)
 	}
-	return regexp.Compile("^" + pattern + "$")
+	re, err := regexp.Compile("^" + pattern + "$")
+	if dollarCount > 0 && allowDollar == enumDollarDigit {
+		if !checkDollarIdxs(dollarIdxs) {
+			return nil, 0, nil, fmt.Errorf("indices for '$' expressions aren't consecutive starting from 1; resulting regular expression: %s", pattern)
+		}
+		return re, dollarCount, dollarIdxs, err
+	}
+	return re, dollarCount, nil, err
+}
+func countBackslashes(s string) int {
+	count := 0
+	for _, r := range s {
+		if r != '\\' {
+			return count
+		}
+		count++
+	}
+	return count
+}
+func checkDollarIdxs(is []int) bool {
+	found := make([]bool, len(is))
+	for _, i := range is {
+		if i >= len(found) {
+			return false
+		}
+		found[i] = true
+	}
+	for _, b := range found {
+		if !b {
+			return false
+		}
+	}
+	return true
 }
 
 // Parse parses the configuration bytes and uses cfgFile only for better error
@@ -376,7 +474,7 @@ func Parse(cfgBytes []byte, cfgFile string) (Config, error) {
 	}
 
 	noGod, _ := convertBoolFromJSON(jsonCfg[keyNoGod])
-	god, _ := convertPatternListFromJSON(jsonCfg[keyGod], keyGod)
+	god, _ := convertPatternListFromJSON(jsonCfg[keyGod], keyGod, enumNoDollar, 0)
 	if !noGod && (god == nil || len(*god) == 0) {
 		jsonCfg[keyGod] = []interface{}{"main"} // default
 	}

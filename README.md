@@ -237,15 +237,8 @@ Finally you can run `go mod vendor` if that is what you like.
 
 ## Open Decisions
 
-1. `**` is currently only allowed at the end of a pattern.
-   It is technically possible to allow `**` in the middle of a pattern even though it matches anything.
-   This would even allow multiple `**` in a single pattern (so `**` would be like `*` but also matching `/`).
-1. It would be possible to support variables for the `allowOnlyIn` and `allowAdditionally` cases.
-   This would allow to match a part of the key and enforce it in the value, e.g.:
-   `"allowAdditonally": {"pkg/x/$*": ["pkg/x/$1/**"]}` to allow tool packages to import their own sub-packages.
-
-According to feedback from the community I am open to change the decisions.
-The current configuration is compatible as unnecessary `allowAdditionally` entries are no problem.
+According to feedback from the community I am open to change things.
+Currently there are no features in discussion.
 
 
 ## Best Practices

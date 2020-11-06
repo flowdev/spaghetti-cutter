@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -174,6 +175,7 @@ func TestPatternListMatchString(t *testing.T) {
 	specs := []struct {
 		name              string
 		givenPatterns     []string
+		givenDollars      []string
 		expectedMatches   []string
 		expectedNoMatches []string
 	}{
@@ -244,12 +246,12 @@ func TestPatternListMatchString(t *testing.T) {
 			}
 			pl := cfg.DB
 			for _, s := range spec.expectedMatches {
-				if !pl.MatchString(s) {
+				if !pl.MatchString(s, nil) {
 					t.Errorf("%q should match one of the patterns %q", s, spec.givenPatterns)
 				}
 			}
 			for _, s := range spec.expectedNoMatches {
-				if pl.MatchString(s) {
+				if pl.MatchString(s, nil) {
 					t.Errorf("%q should NOT match any of the patterns %q", s, spec.givenPatterns)
 				}
 			}
@@ -290,6 +292,12 @@ func TestPatternMap(t *testing.T) {
 			expectedLeftMatch:   false,
 			expectedRightString: "",
 		}, {
+			name:                "dollars",
+			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e/$1/f"]`,
+			givenLeftPattern:    "a/foo/b/bar/car/c",
+			expectedLeftMatch:   true,
+			expectedRightString: "`d/$2/e/$1/f`",
+		}, {
 			name:                "all-complexity",
 			givenJSON:           `"foo/bar/**": ["b"], "*/*a/**": ["*/*b/**", "b*/c*d/**"]`,
 			givenLeftPattern:    "foo/bara/doo/ey",
@@ -307,7 +315,7 @@ func TestPatternMap(t *testing.T) {
 			}
 			pm := cfg.AllowOnlyIn
 
-			pl := pm.MatchingList(spec.givenLeftPattern)
+			pl, _ := pm.MatchingList(spec.givenLeftPattern)
 
 			if spec.expectedLeftMatch && pl == nil {
 				t.Fatalf("expected left match for pattern %q in map %v", spec.givenLeftPattern, pm)
@@ -320,6 +328,75 @@ func TestPatternMap(t *testing.T) {
 
 			if spec.expectedRightString != pl.String() {
 				t.Errorf("expected right string representation %q but got: %q", spec.expectedRightString, pl.String())
+			}
+		})
+	}
+}
+
+func TestDollars(t *testing.T) {
+	specs := []struct {
+		name                string
+		givenJSON           string
+		givenLeftPattern    string
+		givenRightPattern   string
+		expectedKeyDollars  []string
+		expectedRightString string
+	}{
+		{
+			name:                "simple-star",
+			givenJSON:           `"a/$*/b": ["c/$1/d"]`,
+			givenLeftPattern:    "a/foo/b",
+			givenRightPattern:   "c/foo/d",
+			expectedKeyDollars:  []string{"foo"},
+			expectedRightString: "`c/$1/d`",
+		}, {
+			name:                "double-star",
+			givenJSON:           `"a/$**/b": ["c/$1/d"]`,
+			givenLeftPattern:    "a/foo/bar/b",
+			givenRightPattern:   "c/foo/bar/d",
+			expectedKeyDollars:  []string{"foo/bar"},
+			expectedRightString: "`c/$1/d`",
+		}, {
+			name:                "many-dollars",
+			givenJSON:           `"a/$*/b/$**/c": ["d/$1/e/$2/f"]`,
+			givenLeftPattern:    "a/foo/b/bar/car/c",
+			givenRightPattern:   "d/foo/e/bar/car/f",
+			expectedKeyDollars:  []string{"foo", "bar/car"},
+			expectedRightString: "`d/$1/e/$2/f`",
+		}, {
+			name:                "shuffled-dollars",
+			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e/$1/f"]`,
+			givenLeftPattern:    "a/foo/b/bar/car/c",
+			givenRightPattern:   "d/bar/car/e/foo/f",
+			expectedKeyDollars:  []string{"foo", "bar/car"},
+			expectedRightString: "`d/$2/e/$1/f`",
+		},
+	}
+
+	for _, spec := range specs {
+		t.Run(spec.name, func(t *testing.T) {
+			cfgBytes := []byte(`{ "allowOnlyIn": { ` + spec.givenJSON + ` } }`)
+			cfg, err := config.Parse(cfgBytes, spec.name)
+			if err != nil {
+				t.Fatalf("got unexpected error: %v", err)
+			}
+			pm := cfg.AllowOnlyIn
+
+			pl, actualKeyDollars := pm.MatchingList(spec.givenLeftPattern)
+
+			if pl == nil {
+				t.Fatalf("expected left match for pattern %q in map %v", spec.givenLeftPattern, pm)
+			}
+
+			if !reflect.DeepEqual(actualKeyDollars, spec.expectedKeyDollars) {
+				t.Errorf("expected dollar matches in key to be %q, got %q", spec.expectedKeyDollars, actualKeyDollars)
+			}
+			if spec.expectedRightString != pl.String() {
+				t.Errorf("expected right string representation %q but got: %q", spec.expectedRightString, pl.String())
+			}
+			if !pl.MatchString(spec.givenRightPattern, spec.expectedKeyDollars) {
+				t.Errorf("right pattern %q didn't match with dollars %q",
+					spec.givenRightPattern, spec.expectedKeyDollars)
 			}
 		})
 	}
