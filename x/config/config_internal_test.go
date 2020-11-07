@@ -181,11 +181,11 @@ func TestRegexpForPattern(t *testing.T) {
 			expectedError:    false,
 		}, {
 			name:             "dollar-double-digit",
-			givenPattern:     `ab$11cd`,
+			givenPattern:     `ab$31cd`,
 			givenAllowDollar: enumDollarDigit,
-			givenMaxDollar:   1,
+			givenMaxDollar:   3,
 			expectedDollars:  1,
-			expectedIdxs:     []int{0},
+			expectedIdxs:     []int{2},
 			expectedRegexp:   `^ab(.*)1cd$`,
 			expectedError:    false,
 		}, {

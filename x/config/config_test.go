@@ -384,6 +384,20 @@ func TestDollars(t *testing.T) {
 			givenRightPattern:   "d/e/f",
 			expectedKeyDollars:  []string{"foo", "bar/car"},
 			expectedRightString: "`d/e/f`",
+		}, {
+			name:                "double-use-dollar",
+			givenJSON:           `"a/$**/b": ["c/$1/d/$1/e"]`,
+			givenLeftPattern:    "a/foo/bar/b",
+			givenRightPattern:   "c/foo/bar/d/foo/bar/e",
+			expectedKeyDollars:  []string{"foo/bar"},
+			expectedRightString: "`c/$1/d/$1/e`",
+		}, {
+			name:                "all-at-once",
+			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e/$1/f/$1/g/$2/h"]`,
+			givenLeftPattern:    "a/foo/b/bar/car/c",
+			givenRightPattern:   "d/bar/car/e/foo/f/foo/g/bar/car/h",
+			expectedKeyDollars:  []string{"foo", "bar/car"},
+			expectedRightString: "`d/$2/e/$1/f/$1/g/$2/h`",
 		},
 	}
 
