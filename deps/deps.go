@@ -10,7 +10,7 @@ import (
 
 // Check checks the dependencies of the given package and reports offending
 // imports.
-func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config) []error {
+func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, pkgInfos map[string]*pkgs.PackageInfo) []error {
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	checkSpecial := checkStandard
 

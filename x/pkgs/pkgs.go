@@ -10,8 +10,28 @@ const pkgMain = "main"
 
 const testSuffix = ".test"
 
-// Define a type alias so other packages can save the import
+// Package is a type alias so other packages can save the import
 type Package = packages.Package
+
+// PkgType is an enum with values like 'Tool' and 'HalfDB'
+type PkgType int
+
+const (
+	PkgTypeStandard PkgType = iota
+	PkgTypeHalfTool
+	PkgTypeTool
+	PkgTypeHalfDB
+	PkgTypeDB
+	PkgTypeGod
+)
+
+type PackageInfo struct {
+	UniqName string
+	Size     int
+	Type     PkgType
+	Deps     []*PackageInfo
+	Pkg      *Package
+}
 
 // RelativePackageName return the package name relative towards the given root package.
 // relPkg can be `/`, `main` or a path like `pkg/x/mytool`.
@@ -51,20 +71,22 @@ func UniquePackageName(relPkg, strictRelPkg string) string {
 }
 
 // UniquePackages makes the given list of packages unique.
-func UniquePackages(pkgs []*Package) []*Package {
-	result := make([]*Package, 0, len(pkgs))
-	pkgNames := make(map[string]struct{}, len(pkgs))
+func UniquePackages(pkgs []*Package) map[string]*PackageInfo {
+	uniqPkgs := make(map[string]*PackageInfo, len(pkgs))
 
 	for _, pkg := range pkgs {
 		relPkg, strictRelPkg := RelativePackageName(pkg, "")
-		uniqPkg := UniquePackageName(relPkg, strictRelPkg)
+		uniqName := UniquePackageName(relPkg, strictRelPkg)
 
-		if _, ok := pkgNames[uniqPkg]; !ok {
-			result = append(result, pkg)
-			pkgNames[uniqPkg] = struct{}{}
+		if _, ok := uniqPkgs[uniqName]; !ok {
+			uniqPkg := &PackageInfo{
+				UniqName: uniqName,
+				Pkg:      pkg,
+			}
+			uniqPkgs[uniqName] = uniqPkg
 		}
 	}
-	return result
+	return uniqPkgs
 }
 
 // IsTestPackage returns true if the given package is a test package and false

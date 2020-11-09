@@ -112,8 +112,9 @@ func TestCheck(t *testing.T) {
 			var errs []string
 			rootPkg := parse.RootPkg(packs)
 			t.Logf("root package: %s", rootPkg)
-			for _, pkg := range pkgs.UniquePackages(packs) {
-				errs = addErrors(errs, deps.Check(pkg, rootPkg, cfg))
+			pkgInfos := pkgs.UniquePackages(packs)
+			for _, pkgInfo := range pkgInfos {
+				errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, pkgInfos))
 			}
 			if len(errs) != spec.expectedErrors {
 				t.Errorf("Expected %d errors but got %d: %q", spec.expectedErrors, len(errs), errs)

@@ -78,10 +78,7 @@ From the output you can see that
 - it imports the `pkg/cart` package and
 - there is no `allowAdditionally` configuration to allow this.
 
-You can fix that with a configuration line like:
-```hjson
-	"allowAdditonally": {"pkg/shopping": ["pkg/cart"]}
-```
+You can fix that by adding a bit of configuration.
 
 Other non-zero return codes are possible for technical problems (unparsable code: 6, ...).
 If used properly in the build pipeline a non-zero return code will stop the

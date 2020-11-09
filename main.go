@@ -71,9 +71,10 @@ func cut(args []string) int {
 	var errs []error
 	rootPkg := parse.RootPkg(packs)
 	log.Printf("INFO - root package: %s", rootPkg)
-	for _, pkg := range pkgs.UniquePackages(packs) {
-		errs = addErrors(errs, deps.Check(pkg, rootPkg, cfg))
-		errs = addErrors(errs, size.Check(pkg, rootPkg, cfg.Size))
+	pkgInfos := pkgs.UniquePackages(packs)
+	for _, pkgInfo := range pkgInfos {
+		errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, pkgInfos))
+		errs = addErrors(errs, size.Check(pkgInfo.Pkg, rootPkg, cfg.Size))
 	}
 
 	if len(errs) > 0 {
