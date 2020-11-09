@@ -21,6 +21,10 @@ So this tool has to care only about additional undesired dependencies.
 I gave a talk that includes the motivation for this tool and some usage examples:
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
+TestImage: [Test Image](svg-test-script01.svg)
+
+TestLink: [Test Link](svg-test-script01.svg)
+
 
 ## Usage
 
