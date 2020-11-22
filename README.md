@@ -109,41 +109,41 @@ TestHTML:
       <!-- First column header is not rotated -->
       <th scope="col"></th>
       <!-- Following headers are rotated??? -->
-      <th scope="col">C o l u m n   h e a d e r   1</th>
-      <th scope="col">Column header 2</th>
-      <th scope="col">Column header 3</th>
-      <th scope="col">Column header 4</th>
-      <th scope="col">Column header 5</th>
-      <th scope="col">Column header 6</th>
-      <th scope="col">Column header 7</th>
-      <th scope="col">Column header 8</th>
-      <th scope="col">Column header 9</th>
-      <th scope="col">Column header 10</th>
-      <th scope="col">Column header 11</th>
-      <th scope="col">Column header 12</th>
-      <th scope="col">Column header 13</th>
-      <th scope="col">Column header 14</th>
-      <th scope="col">Column header 15</th>
-      <th scope="col">Column header 16</th>
-      <th scope="col">Column header 17</th>
-      <th scope="col">Column header 18</th>
-      <th scope="col">Column header 19</th>
-      <th scope="col">Column header 20</th>
-      <th scope="col">Column header 21</th>
-      <th scope="col">Column header 22</th>
-      <th scope="col">Column header 23</th>
-      <th scope="col">Column header 24</th>
-      <th scope="col">Column header 25</th>
-      <th scope="col">Column header 26</th>
-      <th scope="col">Column header 27</th>
-      <th scope="col">Column header 28</th>
-      <th scope="col">Column header 29</th>
-      <th scope="col" style="transform: rotate(270deg);">Column header 30</th>
+      <th scope="col">C o l u m n / h e a d e r / 1</th>
+      <th scope="col">C o l u m n / h e a d e r / 2</th>
+      <th scope="col">C o l u m n / h e a d e r / 3</th>
+      <th scope="col">C o l u m n / h e a d e r / 4</th>
+      <th scope="col">C o l u m n / h e a d e r / 5</th>
+      <th scope="col">C o l u m n / h e a d e r / 6</th>
+      <th scope="col">C o l u m n / h e a d e r / 7</th>
+      <th scope="col">C o l u m n / h e a d e r / 8</th>
+      <th scope="col">C o l u m n / h e a d e r / 9</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 0</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 1</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 2</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 3</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 4</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 5</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 6</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 7</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 8</th>
+      <th scope="col">C o l u m n / h e a d e r / 1 9</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 0</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 1</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 2</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 3</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 4</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 5</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 6</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 7</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 8</th>
+      <th scope="col">C o l u m n / h e a d e r / 2 9</th>
+      <th scope="col">C o l u m n / h e a d e r / 3 0</th>
     </tr> 
   </thead>
   <tbody>
     <tr>
-      <th scope="row">Row header 1</th>
+      <th scope="row">Row / header / 1</th>
       <td>X</td>
       <td>X</td>
       <td> </td>
@@ -176,7 +176,7 @@ TestHTML:
       <td> </td>
     </tr>
     <tr>
-      <th scope="row">Row header 1/sub_package</th>
+      <th scope="row">Row / header / 1 / sub_package</th>
       <td> </td>
       <td> </td>
       <td> </td>
