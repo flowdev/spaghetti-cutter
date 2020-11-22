@@ -104,14 +104,14 @@ This tool was especially created with Web APIs in mind as that is what about
 So it offers special handling for the following cases:
 - Tools: Tool packages are allowed to be used everywhere else except in other
   tool packages. But they aren't allowed to import any other internal packages.
-- Tool sub-packages: Sub-packages of Tool packages aren't allowed to import any
+- Tool sub-packages: Sub-packages of tool packages aren't allowed to import any
   other internal package like tool packages. Additionally they aren't allowed
   to be used anywhere else in the project. So you should use explicit
   configuration with explanations as comments (what the sub-packages contain
   and why they exist at all).
 - Database: DB packages are allowed to be used in other DB packages and
   standard (business) packages. Of course they can use tool packages but
-  nothing else.  Domain data structures can be either `db` or `tool` packages.
+  nothing else.  Domain data structures can be either DB or tool packages.
 - Database sub-packages: Sub-packages of DB packages are allowed to only import
   tool packages like DB packages. Additionally they aren't allowed to be used
   anywhere else in the project. So you should use explicit configuration with
