@@ -21,119 +21,15 @@ So this tool has to care only about additional undesired dependencies.
 I gave a talk that includes the motivation for this tool and some usage examples:
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
-TestHTML:
-<!-- spaghetti-cutter: start -->
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th scope="col">C o l u m n / h e a d e r / 1</th>
-      <th scope="col">C o l u m n / h e a d e r / 2</th>
-      <th scope="col">C o l u m n / h e a d e r / 3</th>
-      <th scope="col">C o l u m n / h e a d e r / 4</th>
-      <th scope="col">C o l u m n / h e a d e r / 5</th>
-      <th scope="col">C o l u m n / h e a d e r / 6</th>
-      <th scope="col">C o l u m n / h e a d e r / 7</th>
-      <th scope="col">C o l u m n / h e a d e r / 8</th>
-      <th scope="col">C o l u m n / h e a d e r / 9</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 0</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 1</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 2</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 3</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 4</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 5</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 6</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 7</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 8</th>
-      <th scope="col">C o l u m n / h e a d e r / 1 9</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 0</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 1</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 2</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 3</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 4</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 5</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 6</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 7</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 8</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 9</th>
-      <th scope="col">C o l u m n / h e a d e r / 3 0</th>
-    </tr> 
-  </thead>
-  <tbody>
-    <tr>
-      <th scope="row"><code>Row / header / 1</code></th>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <th scope="row"><code>Row / header / 1 / sub_package</code></th>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-      <td> </td>
-      <td>X</td>
-      <td>X</td>
-      <td> </td>
-    </tr>
-  </tbody>
-</table>
-<!-- spaghetti-cutter: end -->
+<!-- spaghetti-cutter: start 
+TestMarkDown table for generated documentation:
 
 | | C o l u m n / h e a d e r / 1 | C o l u m n / h e a d e r / 2 | C o l u m n / h e a d e r / 3 | C o l u m n / h e a d e r / 4 | C o l u m n / h e a d e r / 5 | C o l u m n / h e a d e r / 6 | C o l u m n / h e a d e r / 7 | C o l u m n / h e a d e r / 8 | C o l u m n / h e a d e r / 9 | C o l u m n / h e a d e r / 1 0 | C o l u m n / h e a d e r / 1 1 | C o l u m n / h e a d e r / 1 2 | C o l u m n / h e a d e r / 1 3 | C o l u m n / h e a d e r / 1 4 | C o l u m n / h e a d e r / 1 5 | C o l u m n / h e a d e r / 1 6 | C o l u m n / h e a d e r / 1 7 | C o l u m n / h e a d e r / 1 8 | C o l u m n / h e a d e r / 1 9 | C o l u m n / h e a d e r / 2 0 | C o l u m n / h e a d e r / 2 1 | C o l u m n / h e a d e r / 2 2 | C o l u m n / h e a d e r / 2 3 | C o l u m n / h e a d e r / 2 4 | C o l u m n / h e a d e r / 2 5 | C o l u m n / h e a d e r / 2 6 | C o l u m n / h e a d e r / 2 7 | C o l u m n / h e a d e r / 2 8 | C o l u m n / h e a d e r / 2 9 | C o l u m n / h e a d e r / 3 0 |
-| :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| :- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | `Row / header / 1` | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  |
 | `Row / header / 1 / sub_package` |   |   |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X |
+-->
+<!-- spaghetti-cutter: end -->
 
 
 ## Usage
