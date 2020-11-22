@@ -22,93 +22,11 @@ I gave a talk that includes the motivation for this tool and some usage examples
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
 TestHTML:
-<!-- spaghetti-cutter: start
-<style>
-.table-header-rotated {
-  border-collapse: collapse;
-  .csstransforms & td {
-    width: 30px;
-  }
-  .no-csstransforms & th {
-    padding: 5px 10px;
-  }
-  td {
-    text-align: center;
-    padding: 10px 5px;
-    border: 1px solid #ccc;
-  }
-  .csstransforms & th.rotate {
-    height: 140px;
-    white-space: nowrap;
-    // Firefox needs the extra DIV for some reason, otherwise the text disappears if you rotate 
-    > div {
-      transform: 
-        // Magic Numbers
-        translate(25px, 51px)
-        // 45 is really 360-45
-        rotate(315deg);
-      width: 30px;
-    }
-    > div > span {
-      border-bottom: 1px solid #ccc;
-      padding: 5px 10px;
-    }
-  }
-  th.row-header {
-    padding: 0 10px;
-    border-bottom: 1px solid #ccc;
-  }
-}
-</style>
-<table class="table table-header-rotated">
+<!-- spaghetti-cutter: start -->
+<table>
   <thead>
     <tr>
       <th></th>
-      <th class="rotate"><div><span>Column header 1</span></div></th>
-        <th class="rotate"><div><span>Column header 2</span></div></th>
-        <th class="rotate"><div><span>Column header 3</span></div></th>
-        <th class="rotate"><div><span>Column header 4</span></div></th>
-        <th class="rotate"><div><span>Column header 5</span></div></th>
-        <th class="rotate"><div><span>Column header 6</span></div></th>
-    </tr> 
-  </thead>
-  <tbody>
-    <tr>
-      <th class="row-header">Row header 1</th>
-      <td><input checked="checked" name="column1[]" type="radio" value="row1-column1"></td>
-      <td><input checked="checked" name="column2[]" type="radio" value="row1-column2"></td>
-      <td><input name="column3[]" type="radio" value="row1-column3"></td>
-      <td><input name="column4[]" type="radio" value="row1-column4"></td>
-      <td><input name="column5[]" type="radio" value="row1-column5"></td>
-      <td><input name="column6[]" type="radio" value="row1-column6"></td>
-    </tr>
-    <tr>
-      <th class="row-header">Row header 2</th>
-      <td><input name="column1[]" type="radio" value="row2-column1"></td>
-      <td><input name="column2[]" type="radio" value="row2-column2"></td>
-      <td><input checked="checked" name="column3[]" type="radio" value="row2-column3"></td>
-      <td><input checked="checked" name="column4[]" type="radio" value="row2-column4"></td>
-      <td><input name="column5[]" type="radio" value="row2-column5"></td>
-      <td><input name="column6[]" type="radio" value="row2-column6"></td>
-    </tr>
-    <tr>
-      <th class="row-header">Row header 3</th>
-      <td><input name="column1[]" type="radio" value="row3-column1"></td>
-      <td><input name="column2[]" type="radio" value="row3-column2"></td>
-      <td><input name="column3[]" type="radio" value="row3-column3"></td>
-      <td><input name="column4[]" type="radio" value="row3-column4"></td>
-      <td><input checked="checked" name="column5[]" type="radio" value="row3-column5"></td>
-      <td><input checked="checked" name="column6[]" type="radio" value="row3-column6"></td>
-    </tr>
-  </tbody>
-</table>
--->
-<table class="table table-header-rotated">
-  <thead>
-    <tr>
-      <!-- First column header is not rotated -->
-      <th scope="col"></th>
-      <!-- Following headers are rotated??? -->
       <th scope="col">C o l u m n / h e a d e r / 1</th>
       <th scope="col">C o l u m n / h e a d e r / 2</th>
       <th scope="col">C o l u m n / h e a d e r / 3</th>
@@ -137,13 +55,13 @@ TestHTML:
       <th scope="col">C o l u m n / h e a d e r / 2 6</th>
       <th scope="col">C o l u m n / h e a d e r / 2 7</th>
       <th scope="col">C o l u m n / h e a d e r / 2 8</th>
-      <th scope="col">C o l u m n / h e a d e r / 2 9</th>
-      <th scope="col">C o l u m n / h e a d e r / 3 0</th>
+      <th scope="col"><code>C o l u m n / h e a d e r / 2 9</code></th>
+      <th scope="col"><code>C o l u m n / h e a d e r / 3 0</code></th>
     </tr> 
   </thead>
   <tbody>
     <tr>
-      <th scope="row">Row / header / 1</th>
+      <th scope="row"><code>Row / header / 1</code></th>
       <td>X</td>
       <td>X</td>
       <td> </td>
@@ -176,7 +94,7 @@ TestHTML:
       <td> </td>
     </tr>
     <tr>
-      <th scope="row">Row / header / 1 / sub_package</th>
+      <th scope="row"><code>Row / header / 1 / sub_package</code></th>
       <td> </td>
       <td> </td>
       <td> </td>
@@ -211,6 +129,11 @@ TestHTML:
   </tbody>
 </table>
 <!-- spaghetti-cutter: end -->
+
+| | `C o l u m n / h e a d e r / 1` | `C o l u m n / h e a d e r / 2` | `C o l u m n / h e a d e r / 3` | `C o l u m n / h e a d e r / 4` | `C o l u m n / h e a d e r / 5` | `C o l u m n / h e a d e r / 6` | `C o l u m n / h e a d e r / 7` | `C o l u m n / h e a d e r / 8` | `C o l u m n / h e a d e r / 9` | `C o l u m n / h e a d e r / 1 0` | `C o l u m n / h e a d e r / 1 1` | `C o l u m n / h e a d e r / 1 2` | `C o l u m n / h e a d e r / 1 3` | `C o l u m n / h e a d e r / 1 4` | `C o l u m n / h e a d e r / 1 5` | `C o l u m n / h e a d e r / 1 6` | `C o l u m n / h e a d e r / 1 7` | `C o l u m n / h e a d e r / 1 8` | `C o l u m n / h e a d e r / 1 9` | `C o l u m n / h e a d e r / 2 0` | `C o l u m n / h e a d e r / 2 1` | `C o l u m n / h e a d e r / 2 2` | `C o l u m n / h e a d e r / 2 3` | `C o l u m n / h e a d e r / 2 4` | `C o l u m n / h e a d e r / 2 5` | `C o l u m n / h e a d e r / 2 6` | `C o l u m n / h e a d e r / 2 7` | `C o l u m n / h e a d e r / 2 8` | `C o l u m n / h e a d e r / 2 9` | `C o l u m n / h e a d e r / 3 0` |
+| :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| `Row / header / 1` | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  |
+| `Row / header / 1 / sub_package` |   |   |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X |
 
 
 ## Usage
