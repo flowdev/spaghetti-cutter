@@ -51,18 +51,18 @@ func (pl *PatternList) String() string {
 
 // MatchString returns true if any of the patterns in the pattern list matches
 // the given string including its dollars and false otherwise.
-func (pl *PatternList) MatchString(s string, dollars []string) bool {
+func (pl *PatternList) MatchString(s string, dollars []string) (atAll, full bool) {
 	if pl == nil {
-		return false
+		return false, false
 	}
 	for _, p := range *pl {
 		if m := p.regexp.FindStringSubmatch(s); len(m) > 0 {
 			if matchDollars(dollars, m[1:], p.dollarIdxs) {
-				return true
+				return true, len(m[0]) >= len(s)
 			}
 		}
 	}
-	return false
+	return false, false
 }
 func matchDollars(given, found []string, idxs []int) bool {
 	for i, f := range found {
@@ -422,7 +422,7 @@ func regexpForPattern(pattern string, allowDollar int, maxDollar int) (*regexp.R
 	if errText != "" {
 		return nil, 0, nil, fmt.Errorf("%s; resulting regular expression: %s", errText, pattern)
 	}
-	re, err := regexp.Compile("^" + pattern + "$")
+	re, err := regexp.Compile("^" + pattern)
 	if dollarCount > 0 && allowDollar == enumDollarDigit {
 		return re, dollarCount, dollarIdxs, err
 	}

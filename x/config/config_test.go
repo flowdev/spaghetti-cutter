@@ -173,67 +173,74 @@ func TestParse(t *testing.T) {
 
 func TestPatternListMatchString(t *testing.T) {
 	specs := []struct {
-		name              string
-		givenPatterns     []string
-		givenDollars      []string
-		expectedMatches   []string
-		expectedNoMatches []string
+		name                string
+		givenPatterns       []string
+		givenDollars        []string
+		expectedHalfMatches []string
+		expectedFullMatches []string
+		expectedNoMatches   []string
 	}{
 		{
-			name:              "one-simple",
-			givenPatterns:     []string{"a"},
-			expectedMatches:   []string{"a"},
-			expectedNoMatches: []string{"b", "aa"},
+			name:                "one-simple",
+			givenPatterns:       []string{"a"},
+			expectedFullMatches: []string{"a"},
+			expectedHalfMatches: []string{"aa", "ab"},
+			expectedNoMatches:   []string{"b", "", "ba"},
 		}, {
-			name:              "many-simple",
-			givenPatterns:     []string{"a", "be", "do", "ra"},
-			expectedMatches:   []string{"a", "be", "do", "ra"},
-			expectedNoMatches: []string{"aa", "b", "bd", "od", "ra*"},
+			name:                "many-simple",
+			givenPatterns:       []string{"a", "be", "do", "ra"},
+			expectedFullMatches: []string{"a", "be", "do", "ra"},
+			expectedHalfMatches: []string{"aa", "bed", "dor", "ra*"},
+			expectedNoMatches:   []string{"b", "bd", "od"},
 		}, {
-			name:              "one-star-1",
-			givenPatterns:     []string{"a/*/b"},
-			expectedMatches:   []string{"a/bla/b", "a//b", "a/*/b"},
-			expectedNoMatches: []string{"a/bla/blue/b", "a/bla//b", "a//bla/b"},
+			name:                "one-star-1",
+			givenPatterns:       []string{"a/*/b"},
+			expectedFullMatches: []string{"a/cla/b", "a//b", "a/*/b"},
+			expectedHalfMatches: []string{"a/cla/blue/b", "a//blue", "a/*/b/"},
+			expectedNoMatches:   []string{"a/cla//b", "a//cla/b"},
 		}, {
-			name:              "one-star-2",
-			givenPatterns:     []string{"*/b"},
-			expectedMatches:   []string{"bla/b", "/b", "*/b"},
-			expectedNoMatches: []string{"bla/blue/b", "bla//b", "/bla/b"},
+			name:                "one-star-2",
+			givenPatterns:       []string{"*/b"},
+			expectedFullMatches: []string{"cla/b", "/b", "*/b"},
+			expectedHalfMatches: []string{"cla/bcd", "/bla", "*/b/c"},
+			expectedNoMatches:   []string{"bla//b", "/cla/b"},
 		}, {
-			name:              "one-star-3",
-			givenPatterns:     []string{"a/*"},
-			expectedMatches:   []string{"a/bla", "a/", "a/*"},
-			expectedNoMatches: []string{"a/bla/blue", "a/bla/", "a//bla", "a//"},
+			name:                "one-star-3",
+			givenPatterns:       []string{"a/*"},
+			expectedFullMatches: []string{"a/bla", "a/", "a/*"},
+			expectedHalfMatches: []string{"a/bla/blue", "a/bla/", "a//bla", "a//"},
 		}, {
-			name:              "one-star-4",
-			givenPatterns:     []string{"a/b*"},
-			expectedMatches:   []string{"a/bla", "a/b", "a/b*"},
-			expectedNoMatches: []string{"a/bla/blue", "a/bla/"},
+			name:                "one-star-4",
+			givenPatterns:       []string{"a/b*"},
+			expectedFullMatches: []string{"a/bla", "a/b", "a/b*"},
+			expectedHalfMatches: []string{"a/bla/blue", "a/bla/"},
 		}, {
-			name:              "multiple-single-stars-1",
-			givenPatterns:     []string{"a/*/b/*/c"},
-			expectedMatches:   []string{"a/foo/b/bar/c", "a//b//c", "a/*/b/*/c"},
-			expectedNoMatches: []string{"a/foo//b/bar/c", "a/foo/b//bar/c", "a/bla/b///c"},
+			name:                "multiple-single-stars-1",
+			givenPatterns:       []string{"a/*/b/*/c"},
+			expectedFullMatches: []string{"a/foo/b/bar/c", "a//b//c", "a/*/b/*/c"},
+			expectedNoMatches:   []string{"a/foo//b/bar/c", "a/foo/b//bar/c", "a/bla/b///c"},
 		}, {
-			name:              "multiple-single-stars-2",
-			givenPatterns:     []string{"a/*b/c*/d"},
-			expectedMatches:   []string{"a/foob/candy/d", "a/b/c/d"},
-			expectedNoMatches: []string{"a/foo/candy/d", "a/foob/c/de"},
+			name:                "multiple-single-stars-2",
+			givenPatterns:       []string{"a/*b/c*/d"},
+			expectedFullMatches: []string{"a/foob/candy/d", "a/b/c/d"},
+			expectedHalfMatches: []string{"a/foob/c/de"},
+			expectedNoMatches:   []string{"a/foo/candy/d"},
 		}, {
-			name:              "escaped-star",
-			givenPatterns:     []string{"a/\\\\*/b"},
-			expectedMatches:   []string{"a/*/b"},
-			expectedNoMatches: []string{"a/bla/b", "a//b"},
+			name:                "escaped-star",
+			givenPatterns:       []string{"a/\\\\*/b"},
+			expectedFullMatches: []string{"a/*/b"},
+			expectedNoMatches:   []string{"a/bla/b", "a//b"},
 		}, {
-			name:              "double-stars",
-			givenPatterns:     []string{"a/**"},
-			expectedMatches:   []string{"a/foob/candy/d", "a/b/c/d/..."},
-			expectedNoMatches: []string{"a/foo/candy\nd", "b/foo/b/c/d"},
+			name:                "double-stars",
+			givenPatterns:       []string{"a/**"},
+			expectedFullMatches: []string{"a/foob/candy/d", "a/b/c/d/..."},
+			expectedHalfMatches: []string{"a/foo/candy\nd"},
+			expectedNoMatches:   []string{"b/foo/b/c/d"},
 		}, {
-			name:              "all-stars",
-			givenPatterns:     []string{"a/*/b/*/c/**"},
-			expectedMatches:   []string{"a/foo/b/bar/c/d/e/f", "a/foo/b/bar/c/d/**/f", "a//b//c/"},
-			expectedNoMatches: []string{"a/foo/b/bar/d/e/f"},
+			name:                "all-stars",
+			givenPatterns:       []string{"a/*/b/*/c/**"},
+			expectedFullMatches: []string{"a/foo/b/bar/c/d/e/f", "a/foo/b/bar/c/d/**/f", "a//b//c/"},
+			expectedNoMatches:   []string{"a/foo/b/bar/d/e/f"},
 		},
 	}
 
@@ -245,13 +252,22 @@ func TestPatternListMatchString(t *testing.T) {
 				t.Fatalf("got unexpected error: %v", err)
 			}
 			pl := cfg.DB
-			for _, s := range spec.expectedMatches {
-				if !pl.MatchString(s, nil) {
+			for _, s := range spec.expectedFullMatches {
+				if _, fullmatch := pl.MatchString(s, nil); !fullmatch {
+					t.Errorf("%q should fully match one of the patterns %q", s, spec.givenPatterns)
+				}
+			}
+			for _, s := range spec.expectedHalfMatches {
+				match, fullmatch := pl.MatchString(s, nil)
+				if !match {
 					t.Errorf("%q should match one of the patterns %q", s, spec.givenPatterns)
+				}
+				if fullmatch {
+					t.Errorf("%q should only match HALF one of the patterns %q", s, spec.givenPatterns)
 				}
 			}
 			for _, s := range spec.expectedNoMatches {
-				if pl.MatchString(s, nil) {
+				if match, _ := pl.MatchString(s, nil); match {
 					t.Errorf("%q should NOT match any of the patterns %q", s, spec.givenPatterns)
 				}
 			}
@@ -422,7 +438,7 @@ func TestDollars(t *testing.T) {
 			if spec.expectedRightString != pl.String() {
 				t.Errorf("expected right string representation %q but got: %q", spec.expectedRightString, pl.String())
 			}
-			if !pl.MatchString(spec.givenRightPattern, spec.expectedKeyDollars) {
+			if _, fullmatch := pl.MatchString(spec.givenRightPattern, spec.expectedKeyDollars); !fullmatch {
 				t.Errorf("right pattern %q didn't match with dollars %q",
 					spec.givenRightPattern, spec.expectedKeyDollars)
 			}

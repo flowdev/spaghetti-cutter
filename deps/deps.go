@@ -14,11 +14,22 @@ func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, pkgInfos map[st
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	checkSpecial := checkStandard
 
-	if isPackageInList(cfg.Tool, nil, relPkg, strictRelPkg) {
-		checkSpecial = checkTool
-	} else if isPackageInList(cfg.DB, nil, relPkg, strictRelPkg) {
-		checkSpecial = checkDB
-	} else if isPackageInList(cfg.God, nil, relPkg, strictRelPkg) {
+	var fullmatchTool, matchTool bool
+	if matchTool, fullmatchTool = isPackageInList(cfg.Tool, nil, relPkg, strictRelPkg); matchTool {
+		if fullmatchTool {
+			checkSpecial = checkTool
+		} else {
+			checkSpecial = checkHalfTool
+		}
+	}
+	if matchDB, fullmatchDB := isPackageInList(cfg.DB, nil, relPkg, strictRelPkg); matchDB {
+		if fullmatchDB {
+			checkSpecial = checkDB
+		} else if !matchTool {
+			checkSpecial = checkHalfDB
+		}
+	}
+	if _, fullmatch := isPackageInList(cfg.God, nil, relPkg, strictRelPkg); fullmatch {
 		checkSpecial = checkGod
 	}
 
@@ -47,7 +58,7 @@ func checkPkg(
 			pl, dollars = cfg.AllowOnlyIn.MatchingList(relImp)
 		}
 		if pl != nil {
-			if !isPackageInList(pl, dollars, relPkg, strictRelPkg) {
+			if _, full := isPackageInList(pl, dollars, relPkg, strictRelPkg); !full {
 				errs = append(errs, fmt.Errorf(
 					"package '%s' isn't allowed to import package '%s' (because of allowOnlyIn)",
 					pkgs.UniquePackageName(relPkg, strictRelPkg),
@@ -65,7 +76,7 @@ func checkPkg(
 			if pl == nil {
 				pl, dollars = cfg.AllowAdditionally.MatchingList(relPkg)
 			}
-			if isPackageInList(pl, dollars, relImp, strictRelImp) {
+			if _, full := isPackageInList(pl, dollars, relImp, strictRelImp); full {
 				continue // this import is fine
 			}
 
@@ -86,11 +97,20 @@ func checkTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Con
 		pkgs.UniquePackageName(relImp, strictRelImp))
 }
 
-func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
-	if isPackageInList(cfg.Tool, nil, relImp, strictRelImp) {
+func checkHalfTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
 		return nil
 	}
-	if isPackageInList(cfg.DB, nil, relImp, strictRelImp) {
+	return fmt.Errorf("tool sub-package '%s' isn't allowed to import package '%s'",
+		pkgs.UniquePackageName(relPkg, strictRelPkg),
+		pkgs.UniquePackageName(relImp, strictRelImp))
+}
+
+func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
+		return nil
+	}
+	if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
 		return nil
 	}
 	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
@@ -101,15 +121,27 @@ func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Confi
 		pkgs.UniquePackageName(relImp, strictRelImp))
 }
 
+func checkHalfDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
+		return nil
+	}
+	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
+		return nil
+	}
+	return fmt.Errorf("DB sub-package '%s' isn't allowed to import package '%s'",
+		pkgs.UniquePackageName(relPkg, strictRelPkg),
+		pkgs.UniquePackageName(relImp, strictRelImp))
+}
+
 func checkGod(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
 	return nil // God never fails ;-)
 }
 
 func checkStandard(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
-	if isPackageInList(cfg.Tool, nil, relImp, strictRelImp) {
+	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
 		return nil
 	}
-	if isPackageInList(cfg.DB, nil, relImp, strictRelImp) {
+	if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
 		return nil
 	}
 	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
@@ -136,10 +168,10 @@ func prodPkg(rel, strict string) string {
 	return p
 }
 
-func isPackageInList(pl *config.PatternList, dollars []string, pkg, strictPkg string) bool {
+func isPackageInList(pl *config.PatternList, dollars []string, pkg, strictPkg string) (atAll, full bool) {
 	if strictPkg != "" {
-		if pl.MatchString(strictPkg, dollars) {
-			return true
+		if atAll, full := pl.MatchString(strictPkg, dollars); atAll {
+			return true, full
 		}
 	}
 	return pl.MatchString(pkg, dollars)
