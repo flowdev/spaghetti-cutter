@@ -55,8 +55,8 @@ TestHTML:
       <th scope="col">C o l u m n / h e a d e r / 2 6</th>
       <th scope="col">C o l u m n / h e a d e r / 2 7</th>
       <th scope="col">C o l u m n / h e a d e r / 2 8</th>
-      <th scope="col"><code>C o l u m n / h e a d e r / 2 9</code></th>
-      <th scope="col"><code>C o l u m n / h e a d e r / 3 0</code></th>
+      <th scope="col">C o l u m n / h e a d e r / 2 9</th>
+      <th scope="col">C o l u m n / h e a d e r / 3 0</th>
     </tr> 
   </thead>
   <tbody>
@@ -130,7 +130,7 @@ TestHTML:
 </table>
 <!-- spaghetti-cutter: end -->
 
-| | `C o l u m n / h e a d e r / 1` | `C o l u m n / h e a d e r / 2` | `C o l u m n / h e a d e r / 3` | `C o l u m n / h e a d e r / 4` | `C o l u m n / h e a d e r / 5` | `C o l u m n / h e a d e r / 6` | `C o l u m n / h e a d e r / 7` | `C o l u m n / h e a d e r / 8` | `C o l u m n / h e a d e r / 9` | `C o l u m n / h e a d e r / 1 0` | `C o l u m n / h e a d e r / 1 1` | `C o l u m n / h e a d e r / 1 2` | `C o l u m n / h e a d e r / 1 3` | `C o l u m n / h e a d e r / 1 4` | `C o l u m n / h e a d e r / 1 5` | `C o l u m n / h e a d e r / 1 6` | `C o l u m n / h e a d e r / 1 7` | `C o l u m n / h e a d e r / 1 8` | `C o l u m n / h e a d e r / 1 9` | `C o l u m n / h e a d e r / 2 0` | `C o l u m n / h e a d e r / 2 1` | `C o l u m n / h e a d e r / 2 2` | `C o l u m n / h e a d e r / 2 3` | `C o l u m n / h e a d e r / 2 4` | `C o l u m n / h e a d e r / 2 5` | `C o l u m n / h e a d e r / 2 6` | `C o l u m n / h e a d e r / 2 7` | `C o l u m n / h e a d e r / 2 8` | `C o l u m n / h e a d e r / 2 9` | `C o l u m n / h e a d e r / 3 0` |
+| | C o l u m n / h e a d e r / 1 | C o l u m n / h e a d e r / 2 | C o l u m n / h e a d e r / 3 | C o l u m n / h e a d e r / 4 | C o l u m n / h e a d e r / 5 | C o l u m n / h e a d e r / 6 | C o l u m n / h e a d e r / 7 | C o l u m n / h e a d e r / 8 | C o l u m n / h e a d e r / 9 | C o l u m n / h e a d e r / 1 0 | C o l u m n / h e a d e r / 1 1 | C o l u m n / h e a d e r / 1 2 | C o l u m n / h e a d e r / 1 3 | C o l u m n / h e a d e r / 1 4 | C o l u m n / h e a d e r / 1 5 | C o l u m n / h e a d e r / 1 6 | C o l u m n / h e a d e r / 1 7 | C o l u m n / h e a d e r / 1 8 | C o l u m n / h e a d e r / 1 9 | C o l u m n / h e a d e r / 2 0 | C o l u m n / h e a d e r / 2 1 | C o l u m n / h e a d e r / 2 2 | C o l u m n / h e a d e r / 2 3 | C o l u m n / h e a d e r / 2 4 | C o l u m n / h e a d e r / 2 5 | C o l u m n / h e a d e r / 2 6 | C o l u m n / h e a d e r / 2 7 | C o l u m n / h e a d e r / 2 8 | C o l u m n / h e a d e r / 2 9 | C o l u m n / h e a d e r / 3 0 |
 | :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | `Row / header / 1` | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  |
 | `Row / header / 1 / sub_package` |   |   |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X |
