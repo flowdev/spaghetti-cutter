@@ -22,7 +22,7 @@ I gave a talk that includes the motivation for this tool and some usage examples
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
 TestHTML:
-<!-- spaghetti-cutter: start -->
+<!-- spaghetti-cutter: start
 <style>
 .table-header-rotated {
   border-collapse: collapse;
@@ -63,9 +63,7 @@ TestHTML:
 <table class="table table-header-rotated">
   <thead>
     <tr>
-      <!-- First column header is not rotated -->
       <th></th>
-      <!-- Following headers are rotated -->
       <th class="rotate"><div><span>Column header 1</span></div></th>
         <th class="rotate"><div><span>Column header 2</span></div></th>
         <th class="rotate"><div><span>Column header 3</span></div></th>
@@ -101,6 +99,114 @@ TestHTML:
       <td><input name="column4[]" type="radio" value="row3-column4"></td>
       <td><input checked="checked" name="column5[]" type="radio" value="row3-column5"></td>
       <td><input checked="checked" name="column6[]" type="radio" value="row3-column6"></td>
+    </tr>
+  </tbody>
+</table>
+-->
+<table class="table table-header-rotated">
+  <thead>
+    <tr>
+      <!-- First column header is not rotated -->
+      <th scope="col"></th>
+      <!-- Following headers are rotated??? -->
+      <th scope="col">C o l u m n   h e a d e r   1</th>
+      <th scope="col">Column header 2</th>
+      <th scope="col">Column header 3</th>
+      <th scope="col">Column header 4</th>
+      <th scope="col">Column header 5</th>
+      <th scope="col">Column header 6</th>
+      <th scope="col">Column header 7</th>
+      <th scope="col">Column header 8</th>
+      <th scope="col">Column header 9</th>
+      <th scope="col">Column header 10</th>
+      <th scope="col">Column header 11</th>
+      <th scope="col">Column header 12</th>
+      <th scope="col">Column header 13</th>
+      <th scope="col">Column header 14</th>
+      <th scope="col">Column header 15</th>
+      <th scope="col">Column header 16</th>
+      <th scope="col">Column header 17</th>
+      <th scope="col">Column header 18</th>
+      <th scope="col">Column header 19</th>
+      <th scope="col">Column header 20</th>
+      <th scope="col">Column header 21</th>
+      <th scope="col">Column header 22</th>
+      <th scope="col">Column header 23</th>
+      <th scope="col">Column header 24</th>
+      <th scope="col">Column header 25</th>
+      <th scope="col">Column header 26</th>
+      <th scope="col">Column header 27</th>
+      <th scope="col">Column header 28</th>
+      <th scope="col">Column header 29</th>
+      <th scope="col" style="transform: rotate(270deg);">Column header 30</th>
+    </tr> 
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Row header 1</th>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <th scope="row">Row header 1/sub_package</th>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
+      <td> </td>
+      <td>X</td>
+      <td>X</td>
+      <td> </td>
     </tr>
   </tbody>
 </table>
