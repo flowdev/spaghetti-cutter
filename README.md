@@ -103,15 +103,25 @@ This tool was especially created with Web APIs in mind as that is what about
 
 So it offers special handling for the following cases:
 - Tools: Tool packages are allowed to be used everywhere else except in other
-  tool packages.
+  tool packages. But they aren't allowed to import any other internal packages.
+- Tool sub-packages: Sub-packages of Tool packages aren't allowed to import any
+  other internal package like tool packages. Additionally they aren't allowed
+  to be used anywhere else in the project. So you should use explicit
+  configuration with explanations as comments (what the sub-packages contain
+  and why they exist at all).
 - Database: DB packages are allowed to be used in other DB packages and
-  standard (business) packages. Of course they can use tool packages.
-  Domain data structures can be either `db` or `tool` packages.
+  standard (business) packages. Of course they can use tool packages but
+  nothing else.  Domain data structures can be either `db` or `tool` packages.
+- Database sub-packages: Sub-packages of DB packages are allowed to only import
+  tool packages like DB packages. Additionally they aren't allowed to be used
+  anywhere else in the project. So you should use explicit configuration with
+  explanations as comments (what the sub-packages contain and why they exist at
+  all).
 - God: A god package can see and use everything. You should use this with great
-  care. `main` is the only default god package used if no explicit package is
-  given. You should only rarely add more.  You can switch `main` to a standard
-  package with the `noGod` configuration key. This makes sense if you have got
-  multiple `main` packages with different dependencies.
+  care. `main` is the only default god package used if no explicit
+  configuration is given. You should only rarely add more.  You can switch
+  `main` to a standard package with the `noGod` configuration key. This makes
+  sense if you have got multiple `main` packages with different dependencies.
 
 These cases needn't be used and can be overwritten with explicit configuration.
 
