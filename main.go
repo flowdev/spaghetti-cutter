@@ -69,11 +69,13 @@ func cut(args []string) int {
 	}
 
 	var errs []error
+	depMap := make(deps.DependencyMap, 256)
+
 	rootPkg := parse.RootPkg(packs)
 	log.Printf("INFO - root package: %s", rootPkg)
 	pkgInfos := pkgs.UniquePackages(packs)
 	for _, pkgInfo := range pkgInfos {
-		errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, pkgInfos))
+		errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, depMap))
 		errs = addErrors(errs, size.Check(pkgInfo.Pkg, rootPkg, cfg.Size))
 	}
 
@@ -85,6 +87,14 @@ func cut(args []string) int {
 	}
 
 	log.Print("INFO - No errors found.")
+
+	for pkg, imps := range depMap {
+		log.Printf("DEBUG - %q -> ...", pkg)
+		for imp := range imps {
+			log.Printf("DEBUG -     ... -> %q", imp)
+		}
+	}
+
 	return 0
 }
 
