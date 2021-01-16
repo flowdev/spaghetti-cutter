@@ -115,7 +115,7 @@ func TestCheck(t *testing.T) {
 			t.Logf("root package: %s", rootPkg)
 			pkgInfos := pkgs.UniquePackages(packs)
 			for _, pkgInfo := range pkgInfos {
-				errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, depMap))
+				errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, &depMap))
 			}
 			if len(errs) != spec.expectedErrors {
 				t.Errorf("Expected %d errors but got %d: %q", spec.expectedErrors, len(errs), errs)

@@ -2,30 +2,136 @@ package deps
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 
+// pkgType can be one of: Standard, Tool, DB or God
+type pkgType int
+
+// Enum of package types: Standard, Tool, DB and God
+const (
+	typeStandard pkgType = iota
+	typeTool
+	typeDB
+	typeGod
+)
+
+var typeLetters = []rune("STDG")
+var typeFormats = []string{"", "_", "`", "**"}
+
+// pkgImports contains the package type and the imported internal packages with their types.
+type pkgImports struct {
+	PkgType pkgType
+	Imports map[string]pkgType
+}
+
 // DependencyMap is mapping importing package to imported packages.
 // importingPackageName -> (importedPackageName -> struct{})
 // An imported package name could be added multiple times to the same importing
 // package name due to test packages.
-type DependencyMap map[string]map[string]struct{}
+type DependencyMap map[string]pkgImports
 
-var mapValue = struct{}{}
+// GenerateTable writes the dependency matrix to a file.
+func GenerateTable(depMap DependencyMap, cfg config.Config, rootPkg string) string {
+	allRows := make([]string, 0, len(depMap))
+	allCols := make([]string, 0, len(depMap))
+	allColsMap := make(map[string]pkgType, len(depMap))
+
+	for pkg, pkgImps := range depMap {
+		allRows = append(allRows, pkg)
+		for impName, impType := range pkgImps.Imports {
+			if _, ok := allColsMap[impName]; !ok {
+				allColsMap[impName] = impType
+				allCols = append(allCols, impName)
+			}
+		}
+	}
+
+	sort.Strings(allRows)
+	sort.Strings(allCols)
+
+	intro := `# Dependency Table for: ` + rootPkg + `
+
+Rows contain importing packages and columns contain imported packages.
+
+Meaning of row and row header formating:
+* **Bold** - God package
+` + "* `Code` - Database package" + `
+* _Italic_ - Tool package
+
+Meaning of letters in table columns:
+* G - God package
+* D - Database package
+* T - Tool package
+* S - Standard package
+
+| `
+	sb := &strings.Builder{}
+	sb.WriteString(intro)
+
+	// (column) header line: | | C o l 1 - G | C o l 2 | ... | C o l N - T |
+	for _, col := range allCols {
+		sb.WriteString("| ")
+		for _, r := range col {
+			sb.WriteRune(r)
+			sb.WriteRune(' ')
+		}
+		letter := typeLetters[allColsMap[col]]
+		sb.WriteString("- ")
+		sb.WriteRune(letter)
+		sb.WriteRune(' ')
+	}
+	sb.WriteString("|\n")
+
+	// separator line: | :- | :-: | :-: | ... | :-: |
+	sb.WriteString("| :- ")
+	for range allCols {
+		sb.WriteString("| :-: ")
+	}
+	sb.WriteString("|\n")
+
+	// normal rows: | **Row1** | **G** | | ... | **T** |
+	for _, row := range allRows {
+		pkgImps := depMap[row]
+
+		sb.WriteString("| ")
+		format := typeFormats[pkgImps.PkgType]
+		sb.WriteString(format)
+		sb.WriteString(row)
+		sb.WriteString(format)
+		sb.WriteRune(' ')
+
+		for _, col := range allCols {
+			sb.WriteString("| ")
+			if impType, ok := pkgImps.Imports[col]; ok {
+				sb.WriteString(format)
+				sb.WriteRune(typeLetters[impType])
+				sb.WriteString(format)
+				sb.WriteRune(' ')
+			}
+		}
+		sb.WriteString("|\n")
+	}
+
+	return sb.String()
+}
 
 // Check checks the dependencies of the given package and reports offending
 // imports.
-func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap DependencyMap) []error {
+func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap *DependencyMap) []error {
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	checkSpecial := checkStandard
+	pkgImps := pkgImports{}
 
 	var fullmatch, matchTool bool
 	if matchTool, fullmatch = isPackageInList(cfg.Tool, nil, relPkg, strictRelPkg); matchTool {
 		if fullmatch {
 			checkSpecial = checkTool
+			pkgImps.PkgType = typeTool
 		} else {
 			checkSpecial = checkHalfTool
 		}
@@ -33,15 +139,22 @@ func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap Dependen
 	if matchDB, fullmatch := isPackageInList(cfg.DB, nil, relPkg, strictRelPkg); matchDB {
 		if fullmatch {
 			checkSpecial = checkDB
+			pkgImps.PkgType = typeDB
 		} else if !matchTool {
 			checkSpecial = checkHalfDB
 		}
 	}
 	if _, fullmatch = isPackageInList(cfg.God, nil, relPkg, strictRelPkg); fullmatch {
 		checkSpecial = checkGod
+		pkgImps.PkgType = typeGod
 	}
 
-	return checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkSpecial, depMap)
+	unqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
+	errs := checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkSpecial, &pkgImps)
+	if !pkgs.IsTestPackage(pkg) && len(pkgImps.Imports) > 0 {
+		(*depMap)[unqPkg] = pkgImps
+	}
+	return errs
 }
 
 func checkPkg(
@@ -49,7 +162,7 @@ func checkPkg(
 	relPkg, strictRelPkg, rootPkg string,
 	cfg config.Config,
 	checkSpecial func(string, string, string, string, config.Config) error,
-	depMap DependencyMap,
+	imps *pkgImports,
 ) (errs []error) {
 	for _, p := range pkg.Imports {
 		relImp, strictRelImp := "", ""
@@ -78,7 +191,9 @@ func checkPkg(
 		}
 
 		if internal {
-			saveDep(depMap, unqPkg, unqImp) // remember dependency
+			if !pkgs.IsTestPackage(pkg) {
+				imps.Imports = saveDep(imps.Imports, relImp, strictRelImp, cfg)
+			}
 
 			// check in allow first:
 			pl = nil
@@ -189,11 +304,20 @@ func isPackageInList(pl *config.PatternList, dollars []string, pkg, strictPkg st
 	return pl.MatchString(pkg, dollars)
 }
 
-func saveDep(dm DependencyMap, pkg, imp string) {
-	im := dm[pkg]
+func saveDep(im map[string]pkgType, relImp, strictRelImp string, cfg config.Config) map[string]pkgType {
 	if len(im) == 0 {
-		im = make(map[string]struct{}, 32)
-		dm[pkg] = im
+		im = make(map[string]pkgType, 32)
 	}
-	im[imp] = mapValue
+	unqImp := pkgs.UniquePackageName(relImp, strictRelImp)
+
+	if _, full := isPackageInList(cfg.God, nil, relImp, strictRelImp); full {
+		im[unqImp] = typeGod
+	} else if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
+		im[unqImp] = typeDB
+	} else if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
+		im[unqImp] = typeTool
+	} else {
+		im[unqImp] = typeStandard
+	}
+	return im
 }
