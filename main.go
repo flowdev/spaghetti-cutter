@@ -15,7 +15,7 @@ import (
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 
-const docFile = "./dependency_table.md"
+const docFile = "./package_dependencies.md"
 
 func main() {
 	rc := cut(os.Args[1:])

@@ -23,7 +23,7 @@ I gave a talk that includes the motivation for this tool and some usage examples
 
 Additionally this tool documents the structure of a project in the
 [configuration](./.spaghetti-cutter.hjson) and the
-[Dependency Table](./dependency_table.md).
+[package dependencies](./package_dependencies.md).
 
 <!-- DOES NOT WORK according to the specification at:
 	https://github.github.com/gfm/#html-blocks
