@@ -54,23 +54,10 @@ func GenerateTable(depMap DependencyMap, cfg config.Config, rootPkg string) stri
 	sort.Strings(allRows)
 	sort.Strings(allCols)
 
-	intro := `# Dependency Table for: ` + rootPkg + `
-
-Rows contain importing packages and columns contain imported packages.
-
-Meaning of row and row header formating:
-* **Bold** - God package
-` + "* `Code` - Database package" + `
-* _Italic_ - Tool package
-
-Meaning of letters in table columns:
-* G - God package
-* D - Database package
-* T - Tool package
-* S - Standard package
+	sb := &strings.Builder{}
+	intro := `# Dependency Table For: ` + rootPkg + `
 
 | `
-	sb := &strings.Builder{}
 	sb.WriteString(intro)
 
 	// (column) header line: | | C o l 1 - G | C o l 2 | ... | C o l N - T |
@@ -117,6 +104,28 @@ Meaning of letters in table columns:
 		sb.WriteString("|\n")
 	}
 
+	legend := `
+### Legend
+
+* Rows - Importing packages
+* columns - Imported packages
+
+
+#### Meaning Of Row And Row Header Formating
+
+* **Bold** - God package
+` + "* `Code` - Database package" + `
+* _Italic_ - Tool package
+
+
+#### Meaning Of Letters In Table Columns
+
+* G - God package
+* D - Database package
+* T - Tool package
+* S - Standard package
+`
+	sb.WriteString(legend)
 	return sb.String()
 }
 

@@ -1,7 +1,6 @@
 {
 	tool: ["x/*"],
 
-	// the "size" package prevents a smaller value
 	size: 1024
 
 	allowAdditionally: {
