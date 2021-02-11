@@ -15,7 +15,7 @@ import (
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 
-const docFile = "./package_dependencies.md"
+const docFile = "package_dependencies.md"
 
 func main() {
 	rc := cut(os.Args[1:])
@@ -30,11 +30,12 @@ func cut(args []string) int {
 		usage       = "root directory of the project"
 	)
 	var startDir string
-	var writeDoc bool
+	var writeDoc string
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.StringVar(&startDir, "root", defaultRoot, usage)
 	fs.StringVar(&startDir, "r", defaultRoot, usage+" (shorthand)")
-	fs.BoolVar(&writeDoc, "doc", true, "write dependency matrix to 'dependency-matrix.md'")
+	fs.StringVar(&writeDoc, "doc", "/",
+		"write dependency matrix to 'package_dependencies.md' for package ('false' for none)")
 	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
@@ -65,6 +66,7 @@ func cut(args []string) int {
 	log.Printf("INFO - configuration 'db': %s", cfg.DB)
 	log.Printf("INFO - configuration 'size': %d", cfg.Size)
 	log.Printf("INFO - configuration 'noGod': %t", cfg.NoGod)
+	log.Printf("INFO - documenting package: %s", writeDoc)
 
 	packs, err := parse.DirTree(root)
 	if err != nil {
@@ -92,9 +94,9 @@ func cut(args []string) int {
 
 	log.Print("INFO - No errors found.")
 
-	if writeDoc {
-		doc := deps.GenerateTable(depMap, cfg, rootPkg)
-		err := ioutil.WriteFile(docFile, []byte(doc), 0644)
+	if writeDoc != "false" {
+		doc := deps.GenerateTable(depMap, cfg, rootPkg, writeDoc)
+		err := ioutil.WriteFile(filepath.Join(root, writeDoc, docFile), []byte(doc), 0644)
 		if err != nil {
 			log.Printf("ERROR - Unable to write dependency table to file: %v", err)
 		}

@@ -2,6 +2,8 @@ package deps
 
 import (
 	"fmt"
+	"log"
+	"path"
 	"sort"
 	"strings"
 
@@ -36,10 +38,11 @@ type pkgImports struct {
 type DependencyMap map[string]pkgImports
 
 // GenerateTable writes the dependency matrix to a file.
-func GenerateTable(depMap DependencyMap, cfg config.Config, rootPkg string) string {
+func GenerateTable(depMap DependencyMap, cfg config.Config, rootPkg, relPkg string) string {
+	depMap = filterDepMap(depMap, relPkg)
 	allRows := make([]string, 0, len(depMap))
-	allCols := make([]string, 0, len(depMap))
-	allColsMap := make(map[string]pkgType, len(depMap))
+	allCols := make([]string, 0, len(depMap)*2)
+	allColsMap := make(map[string]pkgType, len(depMap)*2)
 
 	for pkg, pkgImps := range depMap {
 		allRows = append(allRows, pkg)
@@ -55,7 +58,7 @@ func GenerateTable(depMap DependencyMap, cfg config.Config, rootPkg string) stri
 	sort.Strings(allCols)
 
 	sb := &strings.Builder{}
-	intro := `# Dependency Table For: ` + rootPkg + `
+	intro := `# Dependency Table For: ` + path.Join(rootPkg, relPkg) + `
 
 | `
 	sb.WriteString(intro)
@@ -129,6 +132,29 @@ func GenerateTable(depMap DependencyMap, cfg config.Config, rootPkg string) stri
 	return sb.String()
 }
 
+func filterDepMap(allMap DependencyMap, startPkg string) DependencyMap {
+	if startPkg == "/" || startPkg == "" {
+		return allMap
+	}
+	if _, ok := allMap[startPkg]; !ok {
+		log.Printf("ERROR - Unable to find start package %q for dependency table.", startPkg)
+		return nil
+	}
+	fltrMap := make(DependencyMap, len(allMap))
+	copyDepsRecursive(allMap, startPkg, fltrMap)
+	return fltrMap
+}
+func copyDepsRecursive(allMap DependencyMap, startPkg string, fltrMap DependencyMap) {
+	imps, ok := allMap[startPkg]
+	if !ok {
+		return
+	}
+	fltrMap[startPkg] = imps
+	for pkg := range imps.Imports {
+		copyDepsRecursive(allMap, pkg, fltrMap)
+	}
+}
+
 // Check checks the dependencies of the given package and reports offending
 // imports.
 func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap *DependencyMap) []error {
@@ -136,26 +162,26 @@ func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap *Depende
 	checkSpecial := checkStandard
 	pkgImps := pkgImports{}
 
-	var fullmatch, matchTool bool
-	if matchTool, fullmatch = isPackageInList(cfg.Tool, nil, relPkg, strictRelPkg); matchTool {
-		if fullmatch {
-			checkSpecial = checkTool
-			pkgImps.PkgType = typeTool
-		} else {
-			checkSpecial = checkHalfTool
-		}
-	}
-	if matchDB, fullmatch := isPackageInList(cfg.DB, nil, relPkg, strictRelPkg); matchDB {
-		if fullmatch {
-			checkSpecial = checkDB
-			pkgImps.PkgType = typeDB
-		} else if !matchTool {
-			checkSpecial = checkHalfDB
-		}
-	}
+	var fullmatch, matchDB bool
 	if _, fullmatch = isPackageInList(cfg.God, nil, relPkg, strictRelPkg); fullmatch {
 		checkSpecial = checkGod
 		pkgImps.PkgType = typeGod
+	}
+	if matchDB, fullmatch = isPackageInList(cfg.DB, nil, relPkg, strictRelPkg); matchDB {
+		if fullmatch {
+			checkSpecial = checkDB
+			pkgImps.PkgType = typeDB
+		} else {
+			checkSpecial = checkHalfDB
+		}
+	}
+	if matchTool, fullmatch := isPackageInList(cfg.Tool, nil, relPkg, strictRelPkg); matchTool {
+		if fullmatch {
+			checkSpecial = checkTool
+			pkgImps.PkgType = typeTool
+		} else if !matchDB {
+			checkSpecial = checkHalfTool
+		}
 	}
 
 	unqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
@@ -225,7 +251,7 @@ func checkPkg(
 }
 
 func checkTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
-	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
+	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
 	return fmt.Errorf("tool package '%s' isn't allowed to import package '%s'",
@@ -234,7 +260,7 @@ func checkTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Con
 }
 
 func checkHalfTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
-	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
+	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
 	return fmt.Errorf("tool sub-package '%s' isn't allowed to import package '%s'",
@@ -249,7 +275,7 @@ func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Confi
 	if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
 		return nil
 	}
-	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
+	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
 	return fmt.Errorf("DB package '%s' isn't allowed to import package '%s'",
@@ -261,7 +287,7 @@ func checkHalfDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.C
 	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
 		return nil
 	}
-	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
+	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
 	return fmt.Errorf("DB sub-package '%s' isn't allowed to import package '%s'",
@@ -280,7 +306,7 @@ func checkStandard(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config
 	if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
 		return nil
 	}
-	if isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp) {
+	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
 	return fmt.Errorf("domain package '%s' isn't allowed to import package '%s'",
@@ -288,20 +314,12 @@ func checkStandard(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config
 		pkgs.UniquePackageName(relImp, strictRelImp))
 }
 
-func isTestPackage(relPkg, strictRelPkg, relImp, strictRelImp string) bool {
-	pkg := prodPkg(relPkg, strictRelPkg)
-	imp := prodPkg(relImp, strictRelImp)
-	return pkg == imp
-}
-func prodPkg(rel, strict string) string {
+func isTestPackage(rel, strict string) bool {
 	p := strict
 	if p == "" {
 		p = rel
 	}
-	if strings.HasSuffix(p, "_test") {
-		p = p[:len(p)-5]
-	}
-	return p
+	return strings.HasSuffix(p, "_test")
 }
 
 func isPackageInList(pl *config.PatternList, dollars []string, pkg, strictPkg string) (atAll, full bool) {
@@ -319,12 +337,12 @@ func saveDep(im map[string]pkgType, relImp, strictRelImp string, cfg config.Conf
 	}
 	unqImp := pkgs.UniquePackageName(relImp, strictRelImp)
 
-	if _, full := isPackageInList(cfg.God, nil, relImp, strictRelImp); full {
-		im[unqImp] = typeGod
+	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
+		im[unqImp] = typeTool
 	} else if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
 		im[unqImp] = typeDB
-	} else if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
-		im[unqImp] = typeTool
+	} else if _, full := isPackageInList(cfg.God, nil, relImp, strictRelImp); full {
+		im[unqImp] = typeGod
 	} else {
 		im[unqImp] = typeStandard
 	}
