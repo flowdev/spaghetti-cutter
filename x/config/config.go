@@ -13,11 +13,13 @@ import (
 // File is the name of the configuration file
 const File = ".spaghetti-cutter.hjson"
 
+type enumDollar int
+
 // internal enum for '$' handling in patterns
 const (
-	enumNoDollar    = iota // '$' isn't allowed at all
-	enumDollarStar         // '$' has to be followed by one or two '*'
-	enumDollarDigit        // '$' has to be followed by a single digit (1-9)
+	enumNoDollar    enumDollar = iota // '$' isn't allowed at all
+	enumDollarStar                    // '$' has to be followed by one or two '*'
+	enumDollarDigit                   // '$' has to be followed by a single digit (1-9)
 )
 
 // Pattern combines the original pattern string with a compiled regular
@@ -58,11 +60,17 @@ func (pl *PatternList) MatchString(s string, dollars []string) (atAll, full bool
 	for _, p := range *pl {
 		if m := p.regexp.FindStringSubmatch(s); len(m) > 0 {
 			if matchDollars(dollars, m[1:], p.dollarIdxs) {
-				return true, len(m[0]) >= len(s)
+				lenm := len(m[0])
+				if lenm >= len(s) {
+					return true, true
+				}
+				if s[lenm] == '/' {
+					atAll = true
+				}
 			}
 		}
 	}
-	return false, false
+	return atAll, false
 }
 func matchDollars(given, found []string, idxs []int) bool {
 	for i, f := range found {
@@ -230,7 +238,7 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 	return &pm, nil
 }
 
-func convertPatternListFromJSON(i interface{}, key string, allowDollar int, keyDollars int) (*PatternList, error) {
+func convertPatternListFromJSON(i interface{}, key string, allowDollar enumDollar, keyDollars int) (*PatternList, error) {
 	if i == nil {
 		return nil, nil
 	}
@@ -312,7 +320,8 @@ func convertStringFromJSON(i interface{}) (string, error) {
 	return s, nil
 }
 
-func regexpForPattern(pattern string, allowDollar int, maxDollar int) (*regexp.Regexp, int, []int, error) {
+func regexpForPattern(pattern string, allowDollar enumDollar, maxDollar int,
+) (*regexp.Regexp, int, []int, error) {
 	const noDollarErrorText = "a '$' has to be escaped for this configuration key"
 	const dollarStarErrorText = "a '$' has to be escaped or followed by one or two unescaped '*'s"
 	const dollarDigitErrorText = "a '$' has to be escaped or followed by a single digit (1-9)"
@@ -422,7 +431,13 @@ func regexpForPattern(pattern string, allowDollar int, maxDollar int) (*regexp.R
 	if errText != "" {
 		return nil, 0, nil, fmt.Errorf("%s; resulting regular expression: %s", errText, pattern)
 	}
-	re, err := regexp.Compile("^" + pattern)
+
+	var err error
+	if allowDollar == enumDollarStar {
+		re, err = regexp.Compile("^" + pattern + "$")
+	} else {
+		re, err = regexp.Compile("^" + pattern)
+	}
 	if dollarCount > 0 && allowDollar == enumDollarDigit {
 		return re, dollarCount, dollarIdxs, err
 	}

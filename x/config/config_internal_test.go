@@ -9,7 +9,7 @@ func TestRegexpForPattern(t *testing.T) {
 	specs := []struct {
 		name             string
 		givenPattern     string
-		givenAllowDollar int
+		givenAllowDollar enumDollar
 		givenMaxDollar   int
 		expectedDollars  int
 		expectedIdxs     []int
@@ -22,112 +22,112 @@ func TestRegexpForPattern(t *testing.T) {
 			givenPattern:     ``,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^`,
+			expectedRegexp:   `^$`,
 			expectedError:    false,
 		}, {
 			name:             "simple",
 			givenPattern:     `abcd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^abcd`,
+			expectedRegexp:   `^abcd$`,
 			expectedError:    false,
 		}, {
 			name:             "double-backslash",
 			givenPattern:     `ab\\\\\\cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\\\\\\cd`,
+			expectedRegexp:   `^ab\\\\\\cd$`,
 			expectedError:    false,
 		}, {
 			name:             "one-star",
 			givenPattern:     `ab*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab(?:[^/]*)cd`,
+			expectedRegexp:   `^ab(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "two-stars",
 			givenPattern:     `ab**cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab(?:.*)cd`,
+			expectedRegexp:   `^ab(?:.*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "unescaped-one-star",
 			givenPattern:     `ab\\\\*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\\\\(?:[^/]*)cd`,
+			expectedRegexp:   `^ab\\\\(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-one-star",
 			givenPattern:     `ab\\\\\*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\\\\\*cd`,
+			expectedRegexp:   `^ab\\\\\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-two-stars",
 			givenPattern:     `ab\\\\\*\\\*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\\\\\*\\\*cd`,
+			expectedRegexp:   `^ab\\\\\*\\\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar",
 			givenPattern:     `ab\\\\\$\\\$cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\\\\\$\\\$cd`,
+			expectedRegexp:   `^ab\\\\\$\\\$cd$`,
 			expectedError:    false,
 		}, {
 			name:             "dollar-one-star",
 			givenPattern:     `ab$*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  1,
-			expectedRegexp:   `^ab([^/]*)cd`,
+			expectedRegexp:   `^ab([^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "dollar-two-stars",
 			givenPattern:     `ab$**cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  1,
-			expectedRegexp:   `^ab(.*)cd`,
+			expectedRegexp:   `^ab(.*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-escaped-star",
 			givenPattern:     `ab\$\*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\$\*cd`,
+			expectedRegexp:   `^ab\$\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-escaped-star-star",
 			givenPattern:     `ab\$\**cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\$\*(?:[^/]*)cd`,
+			expectedRegexp:   `^ab\$\*(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-star",
 			givenPattern:     `ab\$*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\$(?:[^/]*)cd`,
+			expectedRegexp:   `^ab\$(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-escaped-star-escaped-star",
 			givenPattern:     `ab\$\*\*cd`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  0,
-			expectedRegexp:   `^ab\$\*\*cd`,
+			expectedRegexp:   `^ab\$\*\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "all-good-cases",
 			givenPattern:     `**se*a**fo\*o\**l/do\*\*or a\nd wi$*do$**ws or n\$\*ot a\$*ll th\$\**at g\$re\$\*\*at at al\$**l`,
 			givenAllowDollar: enumDollarStar,
 			expectedDollars:  2,
-			expectedRegexp:   `^(?:.*)se(?:[^/]*)a(?:.*)fo\*o\*(?:[^/]*)l/do\*\*or a\nd wi([^/]*)do(.*)ws or n\$\*ot a\$(?:[^/]*)ll th\$\*(?:[^/]*)at g\$re\$\*\*at at al\$(?:.*)l`,
+			expectedRegexp:   `^(?:.*)se(?:[^/]*)a(?:.*)fo\*o\*(?:[^/]*)l/do\*\*or a\nd wi([^/]*)do(.*)ws or n\$\*ot a\$(?:[^/]*)ll th\$\*(?:[^/]*)at g\$re\$\*\*at at al\$(?:.*)l$`,
 			expectedError:    false,
 
 			// NO DOLLAR CASES:
