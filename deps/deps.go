@@ -62,6 +62,9 @@ func FindDocPkgs(dtPkgs []string, root string) map[string]struct{} {
 			log.Printf("WARN - Unable to list directory %q: %v", path, err)
 			return filepath.SkipDir
 		}
+		if path == root {
+			return nil // don't add the root DocFile
+		}
 
 		// no valid package starts with '.' and we don't want to search in '.git' and similar
 		if strings.HasPrefix(info.Name(), ".") {
@@ -69,8 +72,13 @@ func FindDocPkgs(dtPkgs []string, root string) map[string]struct{} {
 		}
 
 		if _, err := os.Lstat(filepath.Join(path, DocFile)); err == nil {
-			log.Printf("DEBUG - Adding documentation package: %q", path)
-			retPkgs[path] = val
+			pkg, err := filepath.Rel(root, path)
+			if err != nil {
+				log.Printf("WARN - Unable to compute package for %q: %v", path, err)
+				return nil // sub-directories might work
+			}
+			pkg = strings.ReplaceAll(pkg, "\\", "/") // packages like URLs have always '/'s
+			retPkgs[pkg] = val
 		}
 		return nil
 	})
@@ -160,14 +168,14 @@ func GenerateTable(
 			sb.WriteRune(r)
 			sb.WriteRune(' ')
 		}
+		letter := typeLetters[allColsMap[col]]
+		sb.WriteString("- ")
+		sb.WriteRune(letter)
 		if _, ok := linkDocPkgs[col]; ok {
 			sb.WriteString("](")
 			sb.WriteString(path.Join(RelPath(relPkg, col), DocFile))
 			sb.WriteString(") ")
 		}
-		letter := typeLetters[allColsMap[col]]
-		sb.WriteString("- ")
-		sb.WriteRune(letter)
 		sb.WriteRune(' ')
 	}
 	sb.WriteString("|\n")
@@ -273,23 +281,29 @@ func RelPath(basepath, targetpath string) string {
 	}
 
 	ret := ""
-	for j := i; j < n; j++ { // go backward for base
+	for j := i; j < n; j++ { // go backward from base
 		ret = path.Join(ret, "..")
 	}
-	for j := i; j < m; j++ { // go forward for target
+	for j := i; j < m; j++ { // go forward to target
 		ret = path.Join(ret, targ[j])
 	}
 
 	return ret
 }
 func splitPath(p string) []string {
-	ret := make([]string, 64)
+	ret := make([]string, 0, 64)
 	for p != "" {
 		base, last := path.Split(p)
 		ret = append(ret, last)
-		p = base
+		p = removeTrailingSlash(base)
 	}
 	return reverse(ret)
+}
+func removeTrailingSlash(p string) string {
+	if !strings.HasSuffix(p, "/") {
+		return p
+	}
+	return p[:len(p)-1]
 }
 func reverse(ss []string) []string {
 	n := len(ss)

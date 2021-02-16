@@ -93,18 +93,19 @@ func cut(args []string) int {
 		errs = addErrors(errs, size.Check(pkgInfo.Pkg, rootPkg, cfg.Size))
 	}
 
+	retCode := 0
 	if len(errs) > 0 {
 		for _, err = range errs {
 			log.Printf("ERROR - %v", err)
 		}
-		return 1
+		retCode = 1
 	}
 
 	log.Print("INFO - No errors found.")
 
 	if docPkgs == "" {
 		log.Print("INFO - No documentation to write.")
-		return 0
+		return retCode
 	}
 
 	log.Print("INFO - Writing documentation.")
@@ -115,7 +116,7 @@ func cut(args []string) int {
 	}
 	deps.WriteDocs(dtPkgs, depMap, linkDocPkgs, cfg, rootPkg, root)
 
-	return 0
+	return retCode
 }
 
 func splitDocPackages(docPkgs string) []string {
