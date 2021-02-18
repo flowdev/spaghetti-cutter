@@ -32,10 +32,13 @@ func cut(args []string) int {
 		usageDoc       = "write '" + deps.DocFile + "' for packages (separated by ','; '' for none)"
 		defaultNoLinks = false
 		usageNoLinks   = "don't use links in '" + deps.DocFile + "' files"
+		defaultStats   = false
+		usageStats     = "output statistics about packages (useS x packages, useD BY y packages, cohesivety factor z)"
 	)
 	var startDir string
 	var docPkgs string
 	var noLinks bool
+	var stats bool
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.StringVar(&startDir, "root", defaultRoot, usageRoot)
 	fs.StringVar(&startDir, "r", defaultRoot, usageRoot+usageShort)
@@ -43,6 +46,8 @@ func cut(args []string) int {
 	fs.StringVar(&docPkgs, "d", "/", usageDoc+usageShort)
 	fs.BoolVar(&noLinks, "nolinks", defaultNoLinks, usageNoLinks)
 	fs.BoolVar(&noLinks, "l", defaultNoLinks, usageNoLinks+usageShort)
+	fs.BoolVar(&stats, "stats", defaultStats, usageStats)
+	fs.BoolVar(&stats, "s", defaultStats, usageStats+usageShort)
 	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
@@ -102,6 +107,10 @@ func cut(args []string) int {
 	}
 
 	log.Print("INFO - No errors found.")
+
+	if stats {
+		deps.LogStats(depMap)
+	}
 
 	if docPkgs == "" {
 		log.Print("INFO - No documentation to write.")

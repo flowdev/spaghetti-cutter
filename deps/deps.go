@@ -43,6 +43,54 @@ type pkgImports struct {
 // package name due to test packages.
 type DependencyMap map[string]pkgImports
 
+// LogStats logs some statistics.
+func LogStats(depMap DependencyMap) error {
+	const pkgHead = "package"
+	maxPkgLen := maxPkgNameLen(depMap)
+	maxPkgLen = max(maxPkgLen, len(pkgHead))
+	pkgNames := sortPkgNames(depMap)
+	log.Printf("STAT - % *s | Type | direct deps | all deps | usages | score", maxPkgLen, pkgHead)
+	for _, pkg := range pkgNames {
+		pkgImps := depMap[pkg]
+		log.Printf("STAT - % *s |  [%c] | %11d | %8d | %6d | %5d",
+			maxPkgLen, lastBytes(maxPkgLen, pkg),
+			typeLetters[pkgImps.PkgType],
+			len(pkgImps.Imports),
+			len(pkgImps.Imports),
+			1,
+			0,
+		)
+	}
+	return nil
+}
+
+func maxPkgNameLen(depMap DependencyMap) int {
+	maxPkgLen := 0
+	for pkg := range depMap {
+		if len(pkg) > maxPkgLen {
+			maxPkgLen = len(pkg)
+		}
+	}
+	return maxPkgLen
+}
+
+func sortPkgNames(depMap DependencyMap) []string {
+	names := make([]string, 0, len(depMap))
+	for pkg := range depMap {
+		names = append(names, pkg)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func lastBytes(l int, s string) string {
+	n := len(s)
+	if n <= l {
+		return s
+	}
+	return s[n-l:]
+}
+
 // FindDocPkgs is finding documentation packages on disk starting at 'root' and
 // adding them to those given in 'dtPkgs'.
 func FindDocPkgs(dtPkgs []string, root string) map[string]struct{} {
@@ -507,4 +555,11 @@ func saveDep(im map[string]pkgType, relImp, strictRelImp string, cfg config.Conf
 		im[unqImp] = typeStandard
 	}
 	return im
+}
+
+func max(a, b int) int {
+	if a >= b {
+		return a
+	}
+	return b
 }
