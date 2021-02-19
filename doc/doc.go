@@ -39,7 +39,7 @@ func FindDocPkgs(dtPkgs []string, root string, excludeRoot bool) map[string]stru
 		}
 
 		// no valid package starts with '.' and we don't want to search in '.git' and similar
-		if strings.HasPrefix(info.Name(), ".") {
+		if strings.HasPrefix(info.Name(), ".") || info.Name() == "testdata" {
 			return filepath.SkipDir
 		}
 
@@ -50,7 +50,11 @@ func FindDocPkgs(dtPkgs []string, root string, excludeRoot bool) map[string]stru
 				return nil // sub-directories might work
 			}
 			pkg = strings.ReplaceAll(pkg, "\\", "/") // packages like URLs have always '/'s
-			retPkgs[pkg] = val
+			if pkg == "." {
+				retPkgs["/"] = val
+			} else {
+				retPkgs[pkg] = val
+			}
 		}
 		return nil
 	})
