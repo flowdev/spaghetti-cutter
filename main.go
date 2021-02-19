@@ -2,15 +2,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/flowdev/spaghetti-cutter/data"
 	"github.com/flowdev/spaghetti-cutter/deps"
+	"github.com/flowdev/spaghetti-cutter/doc"
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/size"
+	"github.com/flowdev/spaghetti-cutter/stat"
 	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/dirs"
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
@@ -28,17 +32,17 @@ func cut(args []string) int {
 		usageShort     = " (shorthand)"
 		defaultRoot    = "."
 		usageRoot      = "root directory of the project"
-		defaultDoc     = "/"
-		usageDoc       = "write '" + deps.DocFile + "' for packages (separated by ','; '' for none)"
+		defaultDoc     = "*"
+		usageDoc       = "write '" + doc.FileName + "' for packages (separated by ','; '' for none)"
 		defaultNoLinks = false
-		usageNoLinks   = "don't use links in '" + deps.DocFile + "' files"
-		defaultStats   = false
-		usageStats     = "output statistics about packages (useS x packages, useD BY y packages, cohesivety factor z)"
+		usageNoLinks   = "don't use links in '" + doc.FileName + "' files"
+		defaultStats   = ""
+		usageStats     = "print statistics about given package"
 	)
 	var startDir string
 	var docPkgs string
 	var noLinks bool
-	var stats bool
+	var stats string
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.StringVar(&startDir, "root", defaultRoot, usageRoot)
 	fs.StringVar(&startDir, "r", defaultRoot, usageRoot+usageShort)
@@ -46,8 +50,8 @@ func cut(args []string) int {
 	fs.StringVar(&docPkgs, "d", "/", usageDoc+usageShort)
 	fs.BoolVar(&noLinks, "nolinks", defaultNoLinks, usageNoLinks)
 	fs.BoolVar(&noLinks, "l", defaultNoLinks, usageNoLinks+usageShort)
-	fs.BoolVar(&stats, "stats", defaultStats, usageStats)
-	fs.BoolVar(&stats, "s", defaultStats, usageStats+usageShort)
+	fs.StringVar(&stats, "stats", defaultStats, usageStats)
+	fs.StringVar(&stats, "s", defaultStats, usageStats+usageShort)
 	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
@@ -79,7 +83,7 @@ func cut(args []string) int {
 	log.Printf("INFO - configuration 'size': %d", cfg.Size)
 	log.Printf("INFO - configuration 'noGod': %t", cfg.NoGod)
 	log.Printf("INFO - documenting package(s): %s", docPkgs)
-	log.Printf("INFO - no links in '"+deps.DocFile+"' files: %t", noLinks)
+	log.Printf("INFO - no links in '"+doc.FileName+"' files: %t", noLinks)
 
 	packs, err := parse.DirTree(root)
 	if err != nil {
@@ -88,7 +92,7 @@ func cut(args []string) int {
 	}
 
 	var errs []error
-	depMap := make(deps.DependencyMap, 256)
+	depMap := make(data.DependencyMap, 256)
 
 	rootPkg := parse.RootPkg(packs)
 	log.Printf("INFO - root package: %s", rootPkg)
@@ -108,22 +112,33 @@ func cut(args []string) int {
 
 	log.Print("INFO - No errors found.")
 
-	if stats {
-		deps.LogStats(depMap)
+	if stats != "" {
+		for _, s := range stat.Create(stats, depMap) {
+			fmt.Println(s)
+		}
 	}
 
 	if docPkgs == "" {
-		log.Print("INFO - No documentation to write.")
+		log.Print("INFO - No documentation wanted.")
 		return retCode
 	}
 
 	log.Print("INFO - Writing documentation.")
-	dtPkgs := splitDocPackages(docPkgs)
+	var dtPkgs []string
+	if docPkgs == "*" { // update all existing docs
+		dtPkgMap := doc.FindDocPkgs(nil, root, false)
+		dtPkgs = make([]string, 0, len(dtPkgMap))
+		for p := range dtPkgMap {
+			dtPkgs = append(dtPkgs, p)
+		}
+	} else { // write explicitly given docs
+		dtPkgs = splitDocPackages(docPkgs)
+	}
 	linkDocPkgs := map[string]struct{}{}
 	if !noLinks {
-		linkDocPkgs = deps.FindDocPkgs(dtPkgs, root)
+		linkDocPkgs = doc.FindDocPkgs(dtPkgs, root, true)
 	}
-	deps.WriteDocs(dtPkgs, depMap, linkDocPkgs, cfg, rootPkg, root)
+	doc.WriteDocs(dtPkgs, depMap, linkDocPkgs, rootPkg, root)
 
 	return retCode
 }

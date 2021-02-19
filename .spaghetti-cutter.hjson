@@ -1,5 +1,5 @@
 {
-	tool: ["x/*"],
+	tool: ["x/*", "data"],
 
 	size: 1024
 

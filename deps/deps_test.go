@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/flowdev/spaghetti-cutter/data"
 	"github.com/flowdev/spaghetti-cutter/deps"
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/x/config"
@@ -110,7 +111,7 @@ func TestCheck(t *testing.T) {
 			}
 
 			var errs []string
-			depMap := make(deps.DependencyMap, 256)
+			depMap := make(data.DependencyMap, 256)
 			rootPkg := parse.RootPkg(packs)
 			t.Logf("root package: %s", rootPkg)
 			pkgInfos := pkgs.UniquePackages(packs)
