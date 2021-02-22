@@ -91,7 +91,9 @@ func writeDoc(
 	if doc == "" {
 		return
 	}
-	err := ioutil.WriteFile(filepath.Join(root, dtPkg, FileName), []byte(doc), 0644)
+	docFile := filepath.Join(dtPkg, FileName)
+	log.Printf("INFO - Write dependency table to file: %s", docFile)
+	err := ioutil.WriteFile(filepath.Join(root, docFile), []byte(doc), 0644)
 	if err != nil {
 		log.Printf("ERROR - Unable to write dependency table to file: %v", err)
 	}
@@ -156,7 +158,7 @@ func GenerateTable(
 	// separator line: | :- | :-: | :-: | ... | :-: |
 	sb.WriteString("| :- ")
 	for range allCols {
-		sb.WriteString("| :-: ")
+		sb.WriteString("| :- ")
 	}
 	sb.WriteString("|\n")
 

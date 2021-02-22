@@ -32,7 +32,7 @@ func Create(startPkg string, depMap data.DependencyMap) []string {
 		" max score - the sum of the packages hidden from user packages",
 		" min score - the packages hidden from all user packages combined",
 		"",
-		fmt.Sprintf(" %-*s | type | direct deps | all deps | usages | max score | min score",
+		fmt.Sprintf(" %-*s | type | direct deps | all deps | users | max score | min score",
 			maxPkgLen, pkgHead),
 	)
 	for _, pkg := range pkgNames {
@@ -40,11 +40,11 @@ func Create(startPkg string, depMap data.DependencyMap) []string {
 		users := pkgUsers(pkg, depMap)
 		allImps := allDeps[pkg]
 		stats = append(stats,
-			fmt.Sprintf(" %-*s |  [%c] | %11d | %8d | %6d | %9d | %9d",
+			fmt.Sprintf(" %-*s |  [%c] | %11d | %8d | %5d | %9d | %9d",
 				maxPkgLen, pkg,
 				data.TypeLetter(pkgImps.PkgType),
 				len(pkgImps.Imports),
-				len(allDeps[pkg]),
+				len(allImps),
 				len(users),
 				maxScore(pkg, allImps, users, depMap),
 				minScore(pkg, allImps, users, depMap),
@@ -77,20 +77,26 @@ func allDependencies(depMap data.DependencyMap) map[string]map[string]struct{} {
 	allDeps := make(map[string]map[string]struct{}, len(depMap))
 	for pkg := range depMap {
 		allPkgDeps := make(map[string]struct{}, 128)
-		addRecursiveDeps(allPkgDeps, pkg, depMap)
+		addRecursiveDeps(allPkgDeps, pkg, "", depMap)
 		allDeps[pkg] = allPkgDeps
 	}
 	return allDeps
 }
 
-func addRecursiveDeps(allPkgDeps map[string]struct{}, pkg string, depMap data.DependencyMap) {
-	pkgImps, ok := depMap[pkg]
+func addRecursiveDeps(allPkgDeps map[string]struct{}, startPkg, excludePkg string, depMap data.DependencyMap) {
+	if startPkg == excludePkg {
+		return
+	}
+	pkgImps, ok := depMap[startPkg]
 	if !ok {
 		return
 	}
 	for p := range pkgImps.Imports {
+		if p == excludePkg {
+			continue
+		}
 		allPkgDeps[p] = struct{}{}
-		addRecursiveDeps(allPkgDeps, p, depMap)
+		addRecursiveDeps(allPkgDeps, p, excludePkg, depMap)
 	}
 }
 
@@ -125,14 +131,9 @@ func minScore(pkg string, imps map[string]struct{}, users []string, depMap data.
 	return len(imps) - overlap(imps, usrsDeps)
 }
 
-func depsWithoutPkg(user, pkg string, depMap data.DependencyMap) map[string]struct{} {
+func depsWithoutPkg(startPkg, excludePkg string, depMap data.DependencyMap) map[string]struct{} {
 	usrDeps := make(map[string]struct{}, 128)
-	for p := range depMap[user].Imports {
-		if p != pkg {
-			usrDeps[p] = struct{}{}
-			addRecursiveDeps(usrDeps, p, depMap)
-		}
-	}
+	addRecursiveDeps(usrDeps, startPkg, excludePkg, depMap)
 	return usrDeps
 }
 
