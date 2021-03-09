@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -36,13 +35,13 @@ func cut(args []string) int {
 		usageDoc       = "write '" + doc.FileName + "' for packages (separated by ','; '' for none)"
 		defaultNoLinks = false
 		usageNoLinks   = "don't use links in '" + doc.FileName + "' files"
-		defaultStats   = ""
-		usageStats     = "print statistics about given package"
+		defaultStats   = "*"
+		usageStats     = "write '" + stat.FileName + "' for packages (separated by ','; '' for none)"
 	)
 	var startDir string
 	var docPkgs string
 	var noLinks bool
-	var stats string
+	var statPkgs string
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.StringVar(&startDir, "root", defaultRoot, usageRoot)
 	fs.StringVar(&startDir, "r", defaultRoot, usageRoot+usageShort)
@@ -50,8 +49,8 @@ func cut(args []string) int {
 	fs.StringVar(&docPkgs, "d", defaultDoc, usageDoc+usageShort)
 	fs.BoolVar(&noLinks, "nolinks", defaultNoLinks, usageNoLinks)
 	fs.BoolVar(&noLinks, "l", defaultNoLinks, usageNoLinks+usageShort)
-	fs.StringVar(&stats, "stats", defaultStats, usageStats)
-	fs.StringVar(&stats, "s", defaultStats, usageStats+usageShort)
+	fs.StringVar(&statPkgs, "stats", defaultStats, usageStats)
+	fs.StringVar(&statPkgs, "s", defaultStats, usageStats+usageShort)
 	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
@@ -112,10 +111,8 @@ func cut(args []string) int {
 
 	log.Print("INFO - No errors found.")
 
-	if stats != "" {
-		for _, s := range stat.Create(stats, depMap) {
-			fmt.Println(s)
-		}
+	if statPkgs != "" {
+		writeStatistics(statPkgs, root, rootPkg, depMap)
 	}
 
 	if docPkgs == "" {
@@ -123,36 +120,68 @@ func cut(args []string) int {
 		return retCode
 	}
 
+	writeDocumentation(docPkgs, root, rootPkg, noLinks, depMap)
+
+	return retCode
+}
+
+func writeStatistics(stPkgs, root, rootPkg string, depMap data.DependencyMap) {
+	log.Print("INFO - Writing statistics.")
+	var statPkgs []string
+	if stPkgs == "*" { // update all existing stats
+		statPkgMap := dirs.FindPkgsWithFile(stat.FileName, nil, root, false)
+		statPkgs = make([]string, 0, len(statPkgMap))
+		for p := range statPkgMap {
+			statPkgs = append(statPkgs, p)
+		}
+	} else { // write explicitly given stats
+		statPkgs = splitPackageNames(stPkgs, "statistics")
+	}
+
+	for _, statPkg := range statPkgs {
+		statMD := stat.Generate(statPkg, depMap)
+		if statMD == "" {
+			continue
+		}
+		statFile := filepath.Join(statPkg, stat.FileName)
+		log.Printf("INFO - Write package statistics to file: %s", stat.FileName)
+		statFile = filepath.Join(root, statFile)
+		err := ioutil.WriteFile(statFile, []byte(statMD), 0644)
+		if err != nil {
+			log.Printf("ERROR - Unable to write package statistics to file %s: %v", statFile, err)
+		}
+	}
+}
+
+func writeDocumentation(docPkgs, root, rootPkg string, noLinks bool, depMap data.DependencyMap) {
 	log.Print("INFO - Writing documentation.")
 	var dtPkgs []string
 	if docPkgs == "*" { // update all existing docs
-		dtPkgMap := doc.FindDocPkgs(nil, root, false)
+		dtPkgMap := dirs.FindPkgsWithFile(doc.FileName, nil, root, false)
 		dtPkgs = make([]string, 0, len(dtPkgMap))
 		for p := range dtPkgMap {
 			dtPkgs = append(dtPkgs, p)
 		}
 	} else { // write explicitly given docs
-		dtPkgs = splitDocPackages(docPkgs)
+		dtPkgs = splitPackageNames(docPkgs, "documentation")
 	}
 	linkDocPkgs := map[string]struct{}{}
 	if !noLinks {
-		linkDocPkgs = doc.FindDocPkgs(dtPkgs, root, true)
+		linkDocPkgs = dirs.FindPkgsWithFile(doc.FileName, dtPkgs, root, true)
 	}
 	doc.WriteDocs(dtPkgs, depMap, linkDocPkgs, rootPkg, root)
-
-	return retCode
 }
 
-func splitDocPackages(docPkgs string) []string {
-	dtPkgs := strings.Split(docPkgs, ",")
-	retPkgs := make([]string, 0, len(dtPkgs))
-	for i, dtPkg := range dtPkgs {
-		dtp := strings.TrimSpace(dtPkg)
-		if dtp == "" {
-			log.Printf("INFO - Not writing documentation for %d-th package because the name is empty.", i+1)
+func splitPackageNames(docPkgs, pkgType string) []string {
+	splitPkgs := strings.Split(docPkgs, ",")
+	retPkgs := make([]string, 0, len(splitPkgs))
+	for i, splitPkg := range splitPkgs {
+		pkg := strings.TrimSpace(splitPkg)
+		if pkg == "" {
+			log.Printf("INFO - Not writing %s for %d-th package because the name is empty.", pkgType, i+1)
 			continue
 		}
-		retPkgs = append(retPkgs, dtp)
+		retPkgs = append(retPkgs, pkg)
 	}
 	return retPkgs
 }

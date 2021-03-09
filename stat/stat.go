@@ -2,46 +2,52 @@ package stat
 
 import (
 	"fmt"
+	"log"
 	"sort"
+	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/data"
 )
 
-// Create creates some statistics for each package in the filtered dependency
+// FileName is the name of the statistics file (package_statistics.md).
+const FileName = "package_statistics.md"
+
+// Generate creates some statistics for each package in the filtered dependency
 // map starting at startPkg:
 // - the type of the package ('S', 'T', 'D' or 'G')
 // - number of direct dependencies
 // - number of dependencies including transitive dependencies
 // - number of packages using it
 // - maximum and minimum score for encapsulating/hiding transitive packages
-func Create(startPkg string, depMap data.DependencyMap) []string {
-	const pkgHead = "package"
+func Generate(startPkg string, depMap data.DependencyMap) string {
 	depMap = data.FilterDepMap(depMap, startPkg, nil)
-	stats := make([]string, 0, 9+len(depMap))
+	if len(depMap) == 0 {
+		log.Printf("INFO - Won't write stats for package %q because it has no dependencies.", startPkg)
+		return ""
+	}
 
-	maxPkgLen := maxPkgNameLen(depMap)
-	maxPkgLen = max(maxPkgLen, len(pkgHead))
 	pkgNames := sortPkgNames(depMap)
 	allDeps := allDependencies(depMap)
-	stats = append(stats,
-		" S T A T I S T I C S",
-		" ===================",
-		"",
-		" Start package - "+startPkg,
-		"",
-		" max score - the sum of the packages hidden from user packages",
-		" min score - the packages hidden from all user packages combined",
-		"",
-		fmt.Sprintf(" %-*s | type | direct deps | all deps | users | max score | min score",
-			maxPkgLen, pkgHead),
-	)
+
+	sb := &strings.Builder{}
+	sb.WriteString(`# Package Statistics
+
+Start package - ` + startPkg + `
+
+max score - the sum of the packages hidden from user packages",
+min score - the packages hidden from all user packages combined",
+
+| package | type | direct deps | all deps | users | max score | min score |
+| :- | :-: | -: | -: | -: | -: | -: |
+`)
+
 	for _, pkg := range pkgNames {
 		pkgImps := depMap[pkg]
 		users := pkgUsers(pkg, depMap)
 		allImps := allDeps[pkg]
-		stats = append(stats,
-			fmt.Sprintf(" %-*s |  [%c] | %11d | %8d | %5d | %9d | %9d",
-				maxPkgLen, pkg,
+		sb.WriteString(
+			fmt.Sprintf("| %s | [%c] | %d | %d | %d | %d | %d |\n",
+				pkg,
 				data.TypeLetter(pkgImps.PkgType),
 				len(pkgImps.Imports),
 				len(allImps),
@@ -51,17 +57,7 @@ func Create(startPkg string, depMap data.DependencyMap) []string {
 			),
 		)
 	}
-	return stats
-}
-
-func maxPkgNameLen(depMap data.DependencyMap) int {
-	maxPkgLen := 0
-	for pkg := range depMap {
-		if len(pkg) > maxPkgLen {
-			maxPkgLen = len(pkg)
-		}
-	}
-	return maxPkgLen
+	return sb.String()
 }
 
 func sortPkgNames(depMap data.DependencyMap) []string {
@@ -151,11 +147,4 @@ func addMap(all, m map[string]struct{}) {
 	for k := range m {
 		all[k] = struct{}{}
 	}
-}
-
-func max(a, b int) int {
-	if a >= b {
-		return a
-	}
-	return b
 }

@@ -3,7 +3,6 @@ package doc
 import (
 	"io/ioutil"
 	"log"
-	"os"
 	"path"
 	"path/filepath"
 	"sort"
@@ -14,55 +13,6 @@ import (
 
 // FileName is the name of the documentation file (package_dependencies.md).
 const FileName = "package_dependencies.md"
-
-// FindDocPkgs is finding documentation packages on disk starting at 'root' and
-// adding them to those given in 'dtPkgs'.
-func FindDocPkgs(dtPkgs []string, root string, excludeRoot bool) map[string]struct{} {
-	val := struct{}{}
-	// prefill doc packages from dtPkgs
-	retPkgs := make(map[string]struct{}, 128)
-	for _, p := range dtPkgs {
-		retPkgs[p] = val
-	}
-
-	// walk the file system to find more dependency table files
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() { // we are only interested in directories
-			return nil
-		}
-		if err != nil {
-			log.Printf("WARN - Unable to list directory %q: %v", path, err)
-			return filepath.SkipDir
-		}
-		if excludeRoot && path == root {
-			return nil // don't add the root DocFile
-		}
-
-		// no valid package starts with '.' and we don't want to search in '.git' and similar
-		if strings.HasPrefix(info.Name(), ".") || info.Name() == "testdata" {
-			return filepath.SkipDir
-		}
-
-		if _, err := os.Lstat(filepath.Join(path, FileName)); err == nil {
-			pkg, err := filepath.Rel(root, path)
-			if err != nil {
-				log.Printf("WARN - Unable to compute package for %q: %v", path, err)
-				return nil // sub-directories might work
-			}
-			pkg = strings.ReplaceAll(pkg, "\\", "/") // packages like URLs have always '/'s
-			if pkg == "." {
-				retPkgs["/"] = val
-			} else {
-				retPkgs[pkg] = val
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		log.Printf("ERROR - Unable to walk the path %q: %v", root, err)
-	}
-	return retPkgs
-}
 
 // WriteDocs generates documentation for the packages 'dtPkgs' and writes it to
 // files.
@@ -93,9 +43,10 @@ func writeDoc(
 	}
 	docFile := filepath.Join(dtPkg, FileName)
 	log.Printf("INFO - Write dependency table to file: %s", docFile)
-	err := ioutil.WriteFile(filepath.Join(root, docFile), []byte(doc), 0644)
+	docFile = filepath.Join(root, docFile)
+	err := ioutil.WriteFile(docFile, []byte(doc), 0644)
 	if err != nil {
-		log.Printf("ERROR - Unable to write dependency table to file: %v", err)
+		log.Printf("ERROR - Unable to write dependency table to file %s: %v", docFile, err)
 	}
 }
 
