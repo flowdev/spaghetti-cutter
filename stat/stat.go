@@ -12,6 +12,8 @@ import (
 // FileName is the name of the statistics file (package_statistics.md).
 const FileName = "package_statistics.md"
 
+var mapValue struct{} = struct{}{}
+
 // Generate creates some statistics for each package in the filtered dependency
 // map starting at startPkg:
 // - the type of the package ('S', 'T', 'D' or 'G')
@@ -30,12 +32,10 @@ func Generate(startPkg string, depMap data.DependencyMap) string {
 	allDeps := allDependencies(depMap)
 
 	sb := &strings.Builder{}
+	sb2 := &strings.Builder{}
 	sb.WriteString(`# Package Statistics
 
 Start package - ` + startPkg + `
-
-* max score - The sum of the packages hidden from user packages.
-* min score - The packages hidden from all user packages combined.
 
 | package | type | direct deps | all deps | users | max score | min score |
 | :- | :-: | -: | -: | -: | -: | -: |
@@ -43,8 +43,10 @@ Start package - ` + startPkg + `
 
 	for _, pkg := range pkgNames {
 		pkgImps := depMap[pkg]
-		users := pkgUsers(pkg, depMap)
 		allImps := allDeps[pkg]
+		users := pkgUsers(pkg, depMap)
+		maxSc, _ := maxScore(pkg, allImps, users, depMap)
+		minScMap := minScore(pkg, allImps, users, depMap)
 		sb.WriteString(
 			fmt.Sprintf("| %s | [%c] | %d | %d | %d | %d | %d |\n",
 				pkg,
@@ -52,11 +54,56 @@ Start package - ` + startPkg + `
 				len(pkgImps.Imports),
 				len(allImps),
 				len(users),
-				maxScore(pkg, allImps, users, depMap),
-				minScore(pkg, allImps, users, depMap),
+				maxSc,
+				len(minScMap),
 			),
 		)
+		sb2.WriteString(`
+### ` + title(pkg) + `
+
+#### Direct Dependencies (Imports)
+
+`)
+		for imp := range pkgImps.Imports {
+			if _, ok := depMap[imp]; ok {
+				sb2.WriteString(`* [` + imp + `](` + fragmentLink(imp) + `)
+`)
+			} else {
+				sb2.WriteString("* `" + imp + "`\n")
+			}
+		}
+
+		sb2.WriteString(`
+#### All Dependencies (Imports) Including Transitive Dependencies
+`)
+		sb2.WriteString(`
+#### Packages Using (Importing) This Package
+`)
+
+		sb2.WriteString(`
+#### Packages Not Imported By Users
+`)
+
+		sb2.WriteString(`
+#### Packages Not Imported By All Users Combined
+`)
 	}
+
+	sb.WriteString(`
+### Legend
+
+* package - name of the internal package without the part common to all packages.
+* type - type of the package:
+  * [G] - God package (can use all packages)
+  * [D] - Database package (can only use tool and other database packages)
+  * [T] - Tool package (foundational, no dependencies)
+  * [S] - Standard package (can only use tool and database packages)
+* direct deps - number of internal packages directly imported by this one.
+* all deps - number of transitive internal packages imported by this package.
+* users - number of internal packages that import this one.
+* max score - sum of the numbers of packages hidden from user packages.
+* min score - number of packages hidden from all user packages combined.
+`)
 	return sb.String()
 }
 
@@ -91,7 +138,7 @@ func addRecursiveDeps(allPkgDeps map[string]struct{}, startPkg, excludePkg strin
 		if p == excludePkg {
 			continue
 		}
-		allPkgDeps[p] = struct{}{}
+		allPkgDeps[p] = mapValue
 		addRecursiveDeps(allPkgDeps, p, excludePkg, depMap)
 	}
 }
@@ -106,25 +153,28 @@ func pkgUsers(pkg string, depMap data.DependencyMap) []string {
 	return users
 }
 
-func maxScore(pkg string, imps map[string]struct{}, users []string, depMap data.DependencyMap) int {
-	s := 0
-	is := len(imps)
+func maxScore(pkg string, imps map[string]struct{}, users []string, depMap data.DependencyMap,
+) (int, map[string]map[string]struct{}) {
+	sc := 0
+	sm := make(map[string]map[string]struct{}, len(users))
 	for _, u := range users {
-		s += is - overlap(imps, depsWithoutPkg(u, pkg, depMap))
+		m := minus(imps, overlap(imps, depsWithoutPkg(u, pkg, depMap)))
+		sc += len(m)
+		sm[u] = m
 	}
-	return s
+	return sc, sm
 }
 
-func minScore(pkg string, imps map[string]struct{}, users []string, depMap data.DependencyMap) int {
+func minScore(pkg string, imps map[string]struct{}, users []string, depMap data.DependencyMap) map[string]struct{} {
 	if len(users) == 0 {
-		return 0
+		return nil
 	}
 
 	usrsDeps := make(map[string]struct{}, 128)
 	for _, u := range users {
 		addMap(usrsDeps, depsWithoutPkg(u, pkg, depMap))
 	}
-	return len(imps) - overlap(imps, usrsDeps)
+	return minus(imps, overlap(imps, usrsDeps))
 }
 
 func depsWithoutPkg(startPkg, excludePkg string, depMap data.DependencyMap) map[string]struct{} {
@@ -133,11 +183,21 @@ func depsWithoutPkg(startPkg, excludePkg string, depMap data.DependencyMap) map[
 	return usrDeps
 }
 
-func overlap(m1, m2 map[string]struct{}) int {
-	o := 0
+func minus(m1, m2 map[string]struct{}) map[string]struct{} {
+	m := make(map[string]struct{}, len(m2))
+	for k := range m1 {
+		if _, ok := m2[k]; !ok {
+			m[k] = mapValue
+		}
+	}
+	return m
+}
+
+func overlap(m1, m2 map[string]struct{}) map[string]struct{} {
+	o := make(map[string]struct{}, len(m2))
 	for k := range m1 {
 		if _, ok := m2[k]; ok {
-			o++
+			o[k] = mapValue
 		}
 	}
 	return o
@@ -145,6 +205,27 @@ func overlap(m1, m2 map[string]struct{}) int {
 
 func addMap(all, m map[string]struct{}) {
 	for k := range m {
-		all[k] = struct{}{}
+		all[k] = mapValue
 	}
+}
+
+func title(pkg string) string {
+	if pkg == "/" {
+		return "Root Package"
+	}
+	return "Package " + pkg
+}
+
+func fragmentLink(pkg string) string {
+	return "#" + strings.ReplaceAll(
+		strings.ReplaceAll(
+			strings.ToLower(
+				title(pkg),
+			),
+			" ",
+			"-",
+		),
+		"/",
+		"",
+	)
 }

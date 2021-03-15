@@ -127,16 +127,7 @@ func cut(args []string) int {
 
 func writeStatistics(stPkgs, root, rootPkg string, depMap data.DependencyMap) {
 	log.Print("INFO - Writing statistics.")
-	var statPkgs []string
-	if stPkgs == "*" { // update all existing stats
-		statPkgMap := dirs.FindPkgsWithFile(stat.FileName, nil, root, false)
-		statPkgs = make([]string, 0, len(statPkgMap))
-		for p := range statPkgMap {
-			statPkgs = append(statPkgs, p)
-		}
-	} else { // write explicitly given stats
-		statPkgs = splitPackageNames(stPkgs, "statistics")
-	}
+	statPkgs := findPackagesWithFileAsSlice(stat.FileName, stPkgs, root, "statistics")
 
 	for _, statPkg := range statPkgs {
 		statMD := stat.Generate(statPkg, depMap)
@@ -144,7 +135,7 @@ func writeStatistics(stPkgs, root, rootPkg string, depMap data.DependencyMap) {
 			continue
 		}
 		statFile := filepath.Join(statPkg, stat.FileName)
-		log.Printf("INFO - Write package statistics to file: %s", stat.FileName)
+		log.Printf("INFO - Write package statistics to file: %s", statFile)
 		statFile = filepath.Join(root, statFile)
 		err := ioutil.WriteFile(statFile, []byte(statMD), 0644)
 		if err != nil {
@@ -155,21 +146,27 @@ func writeStatistics(stPkgs, root, rootPkg string, depMap data.DependencyMap) {
 
 func writeDocumentation(docPkgs, root, rootPkg string, noLinks bool, depMap data.DependencyMap) {
 	log.Print("INFO - Writing documentation.")
-	var dtPkgs []string
-	if docPkgs == "*" { // update all existing docs
-		dtPkgMap := dirs.FindPkgsWithFile(doc.FileName, nil, root, false)
-		dtPkgs = make([]string, 0, len(dtPkgMap))
-		for p := range dtPkgMap {
-			dtPkgs = append(dtPkgs, p)
-		}
-	} else { // write explicitly given docs
-		dtPkgs = splitPackageNames(docPkgs, "documentation")
-	}
+	dtPkgs := findPackagesWithFileAsSlice(doc.FileName, docPkgs, root, "documentation")
+
 	linkDocPkgs := map[string]struct{}{}
 	if !noLinks {
 		linkDocPkgs = dirs.FindPkgsWithFile(doc.FileName, dtPkgs, root, true)
 	}
 	doc.WriteDocs(dtPkgs, depMap, linkDocPkgs, rootPkg, root)
+}
+
+func findPackagesWithFileAsSlice(signalFile, pkgNames, root, pkgType string) []string {
+	var pkgs []string
+	if pkgNames == "*" { // find all existing files
+		pkgMap := dirs.FindPkgsWithFile(signalFile, nil, root, false)
+		pkgs = make([]string, 0, len(pkgMap))
+		for p := range pkgMap {
+			pkgs = append(pkgs, p)
+		}
+	} else { // write explicitly given docs
+		pkgs = splitPackageNames(pkgNames, pkgType)
+	}
+	return pkgs
 }
 
 func splitPackageNames(docPkgs, pkgType string) []string {
