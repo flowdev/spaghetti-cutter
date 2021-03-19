@@ -61,6 +61,7 @@ Start package - ` + startPkg + `
 
 		pkgTitle := title(pkg)
 		sb2.WriteString(`
+
 ### ` + pkgTitle + `
 
 #### Direct Dependencies (Imports) For ` + pkgTitle + `
@@ -99,6 +100,7 @@ Start package - ` + startPkg + `
 * max score - sum of the numbers of packages hidden from user packages.
 * min score - number of packages hidden from all user packages combined.
 `)
+	sb.WriteString(sb2.String())
 	return sb.String()
 }
 

@@ -24,3 +24,93 @@ Start package - /
 * users - number of internal packages that import this one.
 * max score - sum of the numbers of packages hidden from user packages.
 * min score - number of packages hidden from all user packages combined.
+
+
+### Root Package
+
+#### Direct Dependencies (Imports) For Root Package
+
+`data`, [deps](#package-deps), [doc](#package-doc), [parse](#package-parse), [size](#package-size), [stat](#package-stat), `x/config`, `x/dirs`, `x/pkgs`
+
+#### All Dependencies (Imports) Including Transitive Dependencies
+
+#### Packages Using (Importing) This Package
+
+#### Packages Not Imported By Users
+
+#### Packages Not Imported By All Users Combined
+
+
+### Package deps
+
+#### Direct Dependencies (Imports) For Package deps
+
+`data`, `x/config`, `x/pkgs`
+
+#### All Dependencies (Imports) Including Transitive Dependencies
+
+#### Packages Using (Importing) This Package
+
+#### Packages Not Imported By Users
+
+#### Packages Not Imported By All Users Combined
+
+
+### Package doc
+
+#### Direct Dependencies (Imports) For Package doc
+
+`data`
+
+#### All Dependencies (Imports) Including Transitive Dependencies
+
+#### Packages Using (Importing) This Package
+
+#### Packages Not Imported By Users
+
+#### Packages Not Imported By All Users Combined
+
+
+### Package parse
+
+#### Direct Dependencies (Imports) For Package parse
+
+`x/pkgs`
+
+#### All Dependencies (Imports) Including Transitive Dependencies
+
+#### Packages Using (Importing) This Package
+
+#### Packages Not Imported By Users
+
+#### Packages Not Imported By All Users Combined
+
+
+### Package size
+
+#### Direct Dependencies (Imports) For Package size
+
+`x/pkgs`
+
+#### All Dependencies (Imports) Including Transitive Dependencies
+
+#### Packages Using (Importing) This Package
+
+#### Packages Not Imported By Users
+
+#### Packages Not Imported By All Users Combined
+
+
+### Package stat
+
+#### Direct Dependencies (Imports) For Package stat
+
+`data`
+
+#### All Dependencies (Imports) Including Transitive Dependencies
+
+#### Packages Using (Importing) This Package
+
+#### Packages Not Imported By Users
+
+#### Packages Not Imported By All Users Combined
