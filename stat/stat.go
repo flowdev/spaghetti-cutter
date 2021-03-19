@@ -252,8 +252,15 @@ func title(pkg string) string {
 	return "Package " + pkg
 }
 
+func pkgName(pkg string) string {
+	if pkg == "/" {
+		return "root"
+	}
+	return pkg
+}
+
 func fragmentLink(pkg string) string {
-	return `[` + pkg + `](#` +
+	return `[` + pkgName(pkg) + `](#` +
 		strings.ReplaceAll(
 			strings.ReplaceAll(
 				strings.ToLower(
