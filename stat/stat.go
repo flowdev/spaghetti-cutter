@@ -66,31 +66,31 @@ Start package - ` + startPkg + `
 
 #### Direct Dependencies (Imports) Of ` + pkgTitle + `
 `)
-		addImports(sb2, pkgImps.Imports, depMap)
+		writeImportLinks(sb2, pkgImps.Imports, depMap)
 		sb2.WriteString(`
 
 #### All (Including Transitive) Dependencies (Imports) Of ` + pkgTitle + `
 `)
-		addPackages(sb2, allImps, depMap)
+		writePackageLinks(sb2, allImps, depMap)
 		sb2.WriteString(`
 
 #### Packages Using (Importing) ` + pkgTitle + `
 `)
-		addFragmentLinks(sb2, users, depMap)
+		writeFragmentLinks(sb2, users, depMap)
 		sb2.WriteString(`
 
 #### Packages Not Imported By Users Of ` + pkgTitle + `
 `)
 		for p, noImps := range maxScoreMap {
 			sb2.WriteString("* " + fragmentLink(p) + ": ")
-			addPackages(sb2, noImps, depMap)
+			writePackageLinks(sb2, noImps, depMap)
 			sb2.WriteString("\n")
 		}
 		sb2.WriteString(`
 
 #### Packages Not Imported By Any Users Of ` + pkgTitle + `
 `)
-		addPackages(sb2, minScoreMap, depMap)
+		writePackageLinks(sb2, minScoreMap, depMap)
 	}
 
 	sb.WriteString(`
@@ -215,30 +215,30 @@ func addToFirst(all, m map[string]struct{}) {
 	}
 }
 
-func addImports(sb *strings.Builder, imps map[string]data.PkgType, depMap data.DependencyMap) {
+func writeImportLinks(sb *strings.Builder, imps map[string]data.PkgType, depMap data.DependencyMap) {
 	sl := make([]string, 0, len(imps))
 	for imp := range imps {
 		sl = append(sl, imp)
 	}
-	addFragmentLinks(sb, sl, depMap)
+	writeFragmentLinks(sb, sl, depMap)
 }
 
-func addPackages(sb *strings.Builder, pkgs map[string]struct{}, depMap data.DependencyMap) {
+func writePackageLinks(sb *strings.Builder, pkgs map[string]struct{}, depMap data.DependencyMap) {
 	sl := make([]string, 0, len(pkgs))
 	for pkg := range pkgs {
 		sl = append(sl, pkg)
 	}
-	addFragmentLinks(sb, sl, depMap)
+	writeFragmentLinks(sb, sl, depMap)
 }
 
-func addFragmentLinks(sb *strings.Builder, pkgs []string, depMap data.DependencyMap) {
+func writeFragmentLinks(sb *strings.Builder, pkgs []string, depMap data.DependencyMap) {
 	sort.Strings(pkgs)
 	for i, p := range pkgs {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
 		if _, ok := depMap[p]; ok {
-			sb.WriteString(`[` + p + `](` + fragmentLink(p) + `)`)
+			sb.WriteString(fragmentLink(p))
 		} else {
 			sb.WriteString("`" + p + "`")
 		}
@@ -253,15 +253,16 @@ func title(pkg string) string {
 }
 
 func fragmentLink(pkg string) string {
-	return "#" + strings.ReplaceAll(
+	return `[` + pkg + `](#` +
 		strings.ReplaceAll(
-			strings.ToLower(
-				title(pkg),
+			strings.ReplaceAll(
+				strings.ToLower(
+					title(pkg),
+				),
+				" ",
+				"-",
 			),
-			" ",
-			"-",
-		),
-		"/",
-		"",
-	)
+			"/",
+			"",
+		) + `)`
 }
