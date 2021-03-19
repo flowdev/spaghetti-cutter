@@ -2,9 +2,6 @@
 
 Start package - /
 
-* max score - The sum of the packages hidden from user packages.
-* min score - The packages hidden from all user packages combined.
-
 | package | type | direct deps | all deps | users | max score | min score |
 | :- | :-: | -: | -: | -: | -: | -: |
 | / | [G] | 9 | 9 | 0 | 0 | 0 |
@@ -13,3 +10,17 @@ Start package - /
 | parse | [S] | 1 | 1 | 1 | 0 | 0 |
 | size | [S] | 1 | 1 | 1 | 0 | 0 |
 | stat | [S] | 1 | 1 | 1 | 0 | 0 |
+
+### Legend
+
+* package - name of the internal package without the part common to all packages.
+* type - type of the package:
+  * [G] - God package (can use all packages)
+  * [D] - Database package (can only use tool and other database packages)
+  * [T] - Tool package (foundational, no dependencies)
+  * [S] - Standard package (can only use tool and database packages)
+* direct deps - number of internal packages directly imported by this one.
+* all deps - number of transitive internal packages imported by this package.
+* users - number of internal packages that import this one.
+* max score - sum of the numbers of packages hidden from user packages.
+* min score - number of packages hidden from all user packages combined.

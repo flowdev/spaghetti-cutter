@@ -17,14 +17,15 @@
 
 #### Meaning Of Row And Row Header Formating
 
-* **Bold** - God package
-* `Code` - Database package
-* _Italic_ - Tool package
+* **Bold** - God package (can use all packages)
+* `Code` - Database package (can only use tool and other database packages)
+* _Italic_ - Tool package (foundational, no dependencies)
+* no formatting - Standard package (can only use tool and database packages)
 
 
 #### Meaning Of Letters In Table Columns
 
-* G - God package
-* D - Database package
-* T - Tool package
-* S - Standard package
+* G - God package (can use all packages)
+* D - Database package (can only use tool and other database packages)
+* T - Tool package (foundational, no dependencies)
+* S - Standard package (can only use tool and database packages)
