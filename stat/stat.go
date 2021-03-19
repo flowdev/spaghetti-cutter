@@ -58,22 +58,17 @@ Start package - ` + startPkg + `
 				len(minScMap),
 			),
 		)
-		sb2.WriteString(`
-### ` + title(pkg) + `
 
-#### Direct Dependencies (Imports)
+		pkgTitle := title(pkg)
+		sb2.WriteString(`
+### ` + pkgTitle + `
+
+#### Direct Dependencies (Imports) For ` + pkgTitle + `
 
 `)
-		for imp := range pkgImps.Imports {
-			if _, ok := depMap[imp]; ok {
-				sb2.WriteString(`* [` + imp + `](` + fragmentLink(imp) + `)
-`)
-			} else {
-				sb2.WriteString("* `" + imp + "`\n")
-			}
-		}
-
+		addImports(sb2, pkgImps.Imports, depMap)
 		sb2.WriteString(`
+
 #### All Dependencies (Imports) Including Transitive Dependencies
 `)
 		sb2.WriteString(`
@@ -150,6 +145,7 @@ func pkgUsers(pkg string, depMap data.DependencyMap) []string {
 			users = append(users, p)
 		}
 	}
+	sort.Strings(users)
 	return users
 }
 
@@ -172,7 +168,7 @@ func minScore(pkg string, imps map[string]struct{}, users []string, depMap data.
 
 	usrsDeps := make(map[string]struct{}, 128)
 	for _, u := range users {
-		addMap(usrsDeps, depsWithoutPkg(u, pkg, depMap))
+		addToFirst(usrsDeps, depsWithoutPkg(u, pkg, depMap))
 	}
 	return minus(imps, overlap(imps, usrsDeps))
 }
@@ -203,9 +199,39 @@ func overlap(m1, m2 map[string]struct{}) map[string]struct{} {
 	return o
 }
 
-func addMap(all, m map[string]struct{}) {
+func addToFirst(all, m map[string]struct{}) {
 	for k := range m {
 		all[k] = mapValue
+	}
+}
+
+func addImports(sb *strings.Builder, imps map[string]data.PkgType, depMap data.DependencyMap) {
+	sl := make([]string, 0, len(imps))
+	for imp := range imps {
+		sl = append(sl, imp)
+	}
+	addFragmentLinks(sb, sl, depMap)
+}
+
+func addPackages(sb *strings.Builder, pkgs map[string]struct{}, depMap data.DependencyMap) {
+	sl := make([]string, 0, len(pkgs))
+	for pkg := range pkgs {
+		sl = append(sl, pkg)
+	}
+	addFragmentLinks(sb, sl, depMap)
+}
+
+func addFragmentLinks(sb *strings.Builder, pkgs []string, depMap data.DependencyMap) {
+	sort.Strings(pkgs)
+	for i, p := range pkgs {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		if _, ok := depMap[p]; ok {
+			sb.WriteString(`[` + p + `](` + fragmentLink(p) + `)`)
+		} else {
+			sb.WriteString("`" + p + "`")
+		}
 	}
 }
 
