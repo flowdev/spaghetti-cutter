@@ -76,7 +76,7 @@ Start package - ` + startPkg + `
 
 #### Packages Using (Importing) ` + pkgTitle + `
 `)
-		addFragmentLinks(sb, users, depMap)
+		addFragmentLinks(sb2, users, depMap)
 		sb2.WriteString(`
 
 #### Packages Not Imported By Users Of ` + pkgTitle + `
