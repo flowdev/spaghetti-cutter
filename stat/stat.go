@@ -45,8 +45,8 @@ Start package - ` + startPkg + `
 		pkgImps := depMap[pkg]
 		allImps := allDeps[pkg]
 		users := pkgUsers(pkg, depMap)
-		maxSc, _ := maxScore(pkg, allImps, users, depMap)
-		minScMap := minScore(pkg, allImps, users, depMap)
+		maxScoreInt, maxScoreMap := maxScore(pkg, allImps, users, depMap)
+		minScoreMap := minScore(pkg, allImps, users, depMap)
 		sb.WriteString(
 			fmt.Sprintf("| %s | [%c] | %d | %d | %d | %d | %d |\n",
 				pkg,
@@ -54,8 +54,8 @@ Start package - ` + startPkg + `
 				len(pkgImps.Imports),
 				len(allImps),
 				len(users),
-				maxSc,
-				len(minScMap),
+				maxScoreInt,
+				len(minScoreMap),
 			),
 		)
 
@@ -64,25 +64,33 @@ Start package - ` + startPkg + `
 
 ### ` + pkgTitle + `
 
-#### Direct Dependencies (Imports) For ` + pkgTitle + `
-
+#### Direct Dependencies (Imports) Of ` + pkgTitle + `
 `)
 		addImports(sb2, pkgImps.Imports, depMap)
 		sb2.WriteString(`
 
-#### All Dependencies (Imports) Including Transitive Dependencies
+#### All (Including Transitive) Dependencies (Imports) Of ` + pkgTitle + `
 `)
+		addPackages(sb2, allImps, depMap)
 		sb2.WriteString(`
-#### Packages Using (Importing) This Package
-`)
 
-		sb2.WriteString(`
-#### Packages Not Imported By Users
+#### Packages Using (Importing) ` + pkgTitle + `
 `)
+		addFragmentLinks(sb, users, depMap)
+		sb2.WriteString(`
 
-		sb2.WriteString(`
-#### Packages Not Imported By All Users Combined
+#### Packages Not Imported By Users Of ` + pkgTitle + `
 `)
+		for p, noImps := range maxScoreMap {
+			sb2.WriteString("* " + fragmentLink(p) + ": ")
+			addPackages(sb2, noImps, depMap)
+			sb2.WriteString("\n")
+		}
+		sb2.WriteString(`
+
+#### Packages Not Imported By Any Users Of ` + pkgTitle + `
+`)
+		addPackages(sb2, minScoreMap, depMap)
 	}
 
 	sb.WriteString(`
