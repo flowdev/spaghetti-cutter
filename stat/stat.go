@@ -61,7 +61,7 @@ Start package - ` + startPkg + `
 
 		pkgTitle := title(pkg)
 		linkPkg := `[` + pkg + `](` + fragment(pkgTitle) + `)`
-		linkType := `[` + string(data.TypeLetter(pkgImps.PkgType)) + `](#legend)`
+		linkType := `[ \[` + string(data.TypeLetter(pkgImps.PkgType)) + `\] ](#legend)`
 
 		linkImps := `0`
 		if len(pkgImps.Imports) > 0 {
@@ -89,7 +89,7 @@ Start package - ` + startPkg + `
 		}
 
 		sb.WriteString(
-			fmt.Sprintf("| %s | [%s] | %s | %s | %s | %s | %s |\n",
+			fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s |\n",
 				linkPkg,
 				linkType,
 				linkImps,
