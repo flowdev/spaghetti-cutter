@@ -4,12 +4,12 @@ Start package - /
 
 | package | type | direct deps | all deps | users | max score | min score |
 | :- | :-: | -: | -: | -: | -: | -: |
-| / | [G] | 9 | 9 | 0 | 0 | 0 |
-| deps | [S] | 3 | 3 | 1 | 0 | 0 |
-| doc | [S] | 1 | 1 | 1 | 0 | 0 |
-| parse | [S] | 1 | 1 | 1 | 0 | 0 |
-| size | [S] | 1 | 1 | 1 | 0 | 0 |
-| stat | [S] | 1 | 1 | 1 | 0 | 0 |
+| [/](#root-package) | [[G](#legend)] | [9](#direct-dependencies-imports-of-root-package) | [9](#all-including-transitive-dependencies-imports-of-root-package) | 0 | 0 | 0 |
+| [deps](#package-deps) | [[S](#legend)] | [3](#direct-dependencies-imports-of-package-deps) | [3](#all-including-transitive-dependencies-imports-of-package-deps) | [1](#packages-using-importing-package-deps) | 0 | 0 |
+| [doc](#package-doc) | [[S](#legend)] | [1](#direct-dependencies-imports-of-package-doc) | [1](#all-including-transitive-dependencies-imports-of-package-doc) | [1](#packages-using-importing-package-doc) | 0 | 0 |
+| [parse](#package-parse) | [[S](#legend)] | [1](#direct-dependencies-imports-of-package-parse) | [1](#all-including-transitive-dependencies-imports-of-package-parse) | [1](#packages-using-importing-package-parse) | 0 | 0 |
+| [size](#package-size) | [[S](#legend)] | [1](#direct-dependencies-imports-of-package-size) | [1](#all-including-transitive-dependencies-imports-of-package-size) | [1](#packages-using-importing-package-size) | 0 | 0 |
+| [stat](#package-stat) | [[S](#legend)] | [1](#direct-dependencies-imports-of-package-stat) | [1](#all-including-transitive-dependencies-imports-of-package-stat) | [1](#packages-using-importing-package-stat) | 0 | 0 |
 
 ### Legend
 

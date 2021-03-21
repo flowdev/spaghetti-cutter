@@ -3,7 +3,9 @@ package stat
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/data"
@@ -13,6 +15,15 @@ import (
 const FileName = "package_statistics.md"
 
 var mapValue struct{} = struct{}{}
+
+// Constants for the title of the sub-sections of the stat docs.
+const (
+	titleImps     = `Direct Dependencies (Imports) Of `
+	titleAllImps  = `All (Including Transitive) Dependencies (Imports) Of `
+	titleUsers    = `Packages Using (Importing) `
+	titleMaxScore = `Packages Shielded From Users Of `
+	titleMinScore = `Packages Shielded From All Users Of `
+)
 
 // Generate creates some statistics for each package in the filtered dependency
 // map starting at startPkg:
@@ -47,19 +58,48 @@ Start package - ` + startPkg + `
 		users := pkgUsers(pkg, depMap)
 		maxScoreInt, maxScoreMap := maxScore(pkg, allImps, users, depMap)
 		minScoreMap := minScore(pkg, allImps, users, depMap)
+
+		pkgTitle := title(pkg)
+		linkPkg := `[` + pkg + `](` + fragment(pkgTitle) + `)`
+		linkType := `[` + string(data.TypeLetter(pkgImps.PkgType)) + `](#legend)`
+
+		linkImps := `0`
+		if len(pkgImps.Imports) > 0 {
+			linkImps = `[` + strconv.Itoa(len(pkgImps.Imports)) + `](` + fragment(titleImps+pkgTitle) + `)`
+		}
+
+		linkAllImps := `0`
+		if len(allImps) > 0 {
+			linkAllImps = `[` + strconv.Itoa(len(allImps)) + `](` + fragment(titleAllImps+pkgTitle) + `)`
+		}
+
+		linkUsers := `0`
+		if len(users) > 0 {
+			linkUsers = `[` + strconv.Itoa(len(users)) + `](` + fragment(titleUsers+pkgTitle) + `)`
+		}
+
+		linkMaxScore := `0`
+		if maxScoreInt > 0 {
+			linkMaxScore = `[` + strconv.Itoa(maxScoreInt) + `](` + fragment(titleMaxScore+pkgTitle) + `)`
+		}
+
+		linkMinScore := `0`
+		if len(minScoreMap) > 0 {
+			linkMinScore = `[` + strconv.Itoa(len(minScoreMap)) + `](` + fragment(titleMinScore+pkgTitle) + `)`
+		}
+
 		sb.WriteString(
-			fmt.Sprintf("| %s | [%c] | %d | %d | %d | %d | %d |\n",
-				pkg,
-				data.TypeLetter(pkgImps.PkgType),
-				len(pkgImps.Imports),
-				len(allImps),
-				len(users),
-				maxScoreInt,
-				len(minScoreMap),
+			fmt.Sprintf("| %s | [%s] | %s | %s | %s | %s | %s |\n",
+				linkPkg,
+				linkType,
+				linkImps,
+				linkAllImps,
+				linkUsers,
+				linkMaxScore,
+				linkMinScore,
 			),
 		)
 
-		pkgTitle := title(pkg)
 		allSectionsEmpty := true
 		sb2.WriteString(`
 
@@ -68,7 +108,7 @@ Start package - ` + startPkg + `
 `)
 		if len(allImps) > 0 {
 			sb2.WriteString(`
-#### Direct Dependencies (Imports) Of ` + pkgTitle + `
+#### ` + titleImps + pkgTitle + `
 `)
 			writeImportLinks(sb2, pkgImps.Imports, depMap)
 			allSectionsEmpty = false
@@ -76,7 +116,7 @@ Start package - ` + startPkg + `
 		if len(allImps) > 0 {
 			sb2.WriteString(`
 
-#### All (Including Transitive) Dependencies (Imports) Of ` + pkgTitle + `
+#### ` + titleAllImps + pkgTitle + `
 `)
 			writePackageLinks(sb2, allImps, depMap)
 			allSectionsEmpty = false
@@ -84,7 +124,7 @@ Start package - ` + startPkg + `
 		if len(users) > 0 {
 			sb2.WriteString(`
 
-#### Packages Using (Importing) ` + pkgTitle + `
+#### ` + titleUsers + pkgTitle + `
 `)
 			writeFragmentLinks(sb2, users, depMap)
 			allSectionsEmpty = false
@@ -92,7 +132,7 @@ Start package - ` + startPkg + `
 		if len(maxScoreMap) > 0 {
 			sb2.WriteString(`
 
-#### Packages Shielded From Users Of ` + pkgTitle + `
+#### ` + titleMaxScore + pkgTitle + `
 `)
 			for p, noImps := range maxScoreMap {
 				sb2.WriteString("* " + fragmentLink(p) + ": ")
@@ -104,7 +144,7 @@ Start package - ` + startPkg + `
 		if len(minScoreMap) > 0 {
 			sb2.WriteString(`
 
-#### Packages Shielded From All Users Of ` + pkgTitle + `
+#### ` + titleMinScore + pkgTitle + `
 `)
 			writePackageLinks(sb2, minScoreMap, depMap)
 			allSectionsEmpty = false
@@ -286,16 +326,20 @@ func pkgName(pkg string) string {
 }
 
 func fragmentLink(pkg string) string {
-	return `[` + pkgName(pkg) + `](#` +
-		strings.ReplaceAll(
-			strings.ReplaceAll(
-				strings.ToLower(
-					title(pkg),
-				),
-				" ",
-				"-",
-			),
-			"/",
+	return `[` + pkgName(pkg) + `](` + fragment(title(pkg)) + `)`
+}
+
+var (
+	notAlphaNums = regexp.MustCompile(`[^a-z0-9 ]+`) // is constant and would blow up at first test
+	spaces       = regexp.MustCompile(`[ ]+`)        // is constant and would blow up at first test
+)
+
+func fragment(s string) string {
+	return `#` + spaces.ReplaceAllString(
+		notAlphaNums.ReplaceAllString(
+			strings.ToLower(s),
 			"",
-		) + `)`
+		),
+		"-",
+	)
 }
