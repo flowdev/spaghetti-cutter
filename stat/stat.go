@@ -92,7 +92,7 @@ Start package - ` + startPkg + `
 		if len(maxScoreMap) > 0 {
 			sb2.WriteString(`
 
-#### Packages Not Imported By Users Of ` + pkgTitle + `
+#### Packages Shielded From Users Of ` + pkgTitle + `
 `)
 			for p, noImps := range maxScoreMap {
 				sb2.WriteString("* " + fragmentLink(p) + ": ")
@@ -104,7 +104,7 @@ Start package - ` + startPkg + `
 		if len(minScoreMap) > 0 {
 			sb2.WriteString(`
 
-#### Packages Not Imported By Any Users Of ` + pkgTitle + `
+#### Packages Shielded From All Users Of ` + pkgTitle + `
 `)
 			writePackageLinks(sb2, minScoreMap, depMap)
 			allSectionsEmpty = false
@@ -188,8 +188,11 @@ func maxScore(pkg string, imps map[string]struct{}, users []string, depMap data.
 	sm := make(map[string]map[string]struct{}, len(users))
 	for _, u := range users {
 		m := minus(imps, overlap(imps, depsWithoutPkg(u, pkg, depMap)))
-		sc += len(m)
-		sm[u] = m
+		n := len(m)
+		if n > 0 {
+			sc += n
+			sm[u] = m
+		}
 	}
 	return sc, sm
 }
