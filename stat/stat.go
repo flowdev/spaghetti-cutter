@@ -60,37 +60,60 @@ Start package - ` + startPkg + `
 		)
 
 		pkgTitle := title(pkg)
+		allSectionsEmpty := true
 		sb2.WriteString(`
 
 ### ` + pkgTitle + `
 
+`)
+		if len(allImps) > 0 {
+			sb2.WriteString(`
 #### Direct Dependencies (Imports) Of ` + pkgTitle + `
 `)
-		writeImportLinks(sb2, pkgImps.Imports, depMap)
-		sb2.WriteString(`
+			writeImportLinks(sb2, pkgImps.Imports, depMap)
+			allSectionsEmpty = false
+		}
+		if len(allImps) > 0 {
+			sb2.WriteString(`
 
 #### All (Including Transitive) Dependencies (Imports) Of ` + pkgTitle + `
 `)
-		writePackageLinks(sb2, allImps, depMap)
-		sb2.WriteString(`
+			writePackageLinks(sb2, allImps, depMap)
+			allSectionsEmpty = false
+		}
+		if len(users) > 0 {
+			sb2.WriteString(`
 
 #### Packages Using (Importing) ` + pkgTitle + `
 `)
-		writeFragmentLinks(sb2, users, depMap)
-		sb2.WriteString(`
+			writeFragmentLinks(sb2, users, depMap)
+			allSectionsEmpty = false
+		}
+		if len(maxScoreMap) > 0 {
+			sb2.WriteString(`
 
 #### Packages Not Imported By Users Of ` + pkgTitle + `
 `)
-		for p, noImps := range maxScoreMap {
-			sb2.WriteString("* " + fragmentLink(p) + ": ")
-			writePackageLinks(sb2, noImps, depMap)
-			sb2.WriteString("\n")
+			for p, noImps := range maxScoreMap {
+				sb2.WriteString("* " + fragmentLink(p) + ": ")
+				writePackageLinks(sb2, noImps, depMap)
+				sb2.WriteString("\n")
+			}
+			allSectionsEmpty = false
 		}
-		sb2.WriteString(`
+		if len(minScoreMap) > 0 {
+			sb2.WriteString(`
 
 #### Packages Not Imported By Any Users Of ` + pkgTitle + `
 `)
-		writePackageLinks(sb2, minScoreMap, depMap)
+			writePackageLinks(sb2, minScoreMap, depMap)
+			allSectionsEmpty = false
+		}
+		if allSectionsEmpty {
+			sb2.WriteString(`No additional data.
+`)
+
+		}
 	}
 
 	sb.WriteString(`

@@ -28,22 +28,15 @@ Start package - /
 
 ### Root Package
 
+
 #### Direct Dependencies (Imports) Of Root Package
 `data`, [deps](#package-deps), [doc](#package-doc), [parse](#package-parse), [size](#package-size), [stat](#package-stat), `x/config`, `x/dirs`, `x/pkgs`
 
 #### All (Including Transitive) Dependencies (Imports) Of Root Package
 `data`, [deps](#package-deps), [doc](#package-doc), [parse](#package-parse), [size](#package-size), [stat](#package-stat), `x/config`, `x/dirs`, `x/pkgs`
 
-#### Packages Using (Importing) Root Package
-
-
-#### Packages Not Imported By Users Of Root Package
-
-
-#### Packages Not Imported By Any Users Of Root Package
-
-
 ### Package deps
+
 
 #### Direct Dependencies (Imports) Of Package deps
 `data`, `x/config`, `x/pkgs`
@@ -58,10 +51,8 @@ Start package - /
 * [root](#root-package): 
 
 
-#### Packages Not Imported By Any Users Of Package deps
-
-
 ### Package doc
+
 
 #### Direct Dependencies (Imports) Of Package doc
 `data`
@@ -76,10 +67,8 @@ Start package - /
 * [root](#root-package): 
 
 
-#### Packages Not Imported By Any Users Of Package doc
-
-
 ### Package parse
+
 
 #### Direct Dependencies (Imports) Of Package parse
 `x/pkgs`
@@ -94,10 +83,8 @@ Start package - /
 * [root](#root-package): 
 
 
-#### Packages Not Imported By Any Users Of Package parse
-
-
 ### Package size
+
 
 #### Direct Dependencies (Imports) Of Package size
 `x/pkgs`
@@ -112,10 +99,8 @@ Start package - /
 * [root](#root-package): 
 
 
-#### Packages Not Imported By Any Users Of Package size
-
-
 ### Package stat
+
 
 #### Direct Dependencies (Imports) Of Package stat
 `data`
@@ -128,6 +113,3 @@ Start package - /
 
 #### Packages Not Imported By Users Of Package stat
 * [root](#root-package): 
-
-
-#### Packages Not Imported By Any Users Of Package stat
