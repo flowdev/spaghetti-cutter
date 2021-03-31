@@ -330,8 +330,8 @@ func fragmentLink(pkg string) string {
 }
 
 var (
-	notAlphaNums = regexp.MustCompile(`[^a-z0-9 ]+`) // is constant and would blow up at first test
-	spaces       = regexp.MustCompile(`[ ]+`)        // is constant and would blow up at first test
+	notAlphaNums = regexp.MustCompile(`[^a-z0-9 -]+`) // is constant and would blow up at first test
+	spaces       = regexp.MustCompile(`[ ]+`)         // is constant and would blow up at first test
 )
 
 func fragment(s string) string {
