@@ -107,20 +107,21 @@ func cut(args []string) int {
 			log.Printf("ERROR - %v", err)
 		}
 		retCode = 1
+	} else {
+		log.Print("INFO - No errors found.")
 	}
-
-	log.Print("INFO - No errors found.")
 
 	if statPkgs != "" {
 		writeStatistics(statPkgs, root, rootPkg, depMap)
+	} else {
+		log.Print("INFO - No statistics wanted.")
 	}
 
-	if docPkgs == "" {
+	if docPkgs != "" {
+		writeDocumentation(docPkgs, root, rootPkg, noLinks, depMap)
+	} else {
 		log.Print("INFO - No documentation wanted.")
-		return retCode
 	}
-
-	writeDocumentation(docPkgs, root, rootPkg, noLinks, depMap)
 
 	return retCode
 }
