@@ -37,11 +37,14 @@ func cut(args []string) int {
 		usageNoLinks   = "don't use links in '" + doc.FileName + "' files"
 		defaultStats   = "*"
 		usageStats     = "write '" + stat.FileName + "' for packages (separated by ','; '' for none)"
+		defaultDirTree = false
+		usageDirTree   = "write a directory tree to the 'dirtree.txt' file"
 	)
 	var startDir string
 	var docPkgs string
 	var noLinks bool
 	var statPkgs string
+	var dirTree bool
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.StringVar(&startDir, "root", defaultRoot, usageRoot)
 	fs.StringVar(&startDir, "r", defaultRoot, usageRoot+usageShort)
@@ -51,6 +54,8 @@ func cut(args []string) int {
 	fs.BoolVar(&noLinks, "l", defaultNoLinks, usageNoLinks+usageShort)
 	fs.StringVar(&statPkgs, "stats", defaultStats, usageStats)
 	fs.StringVar(&statPkgs, "s", defaultStats, usageStats+usageShort)
+	fs.BoolVar(&dirTree, "dirtree", defaultDirTree, usageDirTree)
+	fs.BoolVar(&dirTree, "t", defaultDirTree, usageDirTree+usageShort)
 	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
@@ -123,6 +128,10 @@ func cut(args []string) int {
 		log.Print("INFO - No documentation wanted.")
 	}
 
+	if dirTree {
+		writeDirTree(root, ".")
+	}
+
 	return retCode
 }
 
@@ -136,7 +145,7 @@ func writeStatistics(stPkgs, root, rootPkg string, depMap data.DependencyMap) {
 			continue
 		}
 		statFile := filepath.Join(statPkg, stat.FileName)
-		log.Printf("INFO - Write package statistics to file: %s", statFile)
+		log.Printf("INFO - Writeing package statistics to file: %s", statFile)
 		statFile = filepath.Join(root, statFile)
 		err := ioutil.WriteFile(statFile, []byte(statMD), 0644)
 		if err != nil {
@@ -154,6 +163,24 @@ func writeDocumentation(docPkgs, root, rootPkg string, noLinks bool, depMap data
 		linkDocPkgs = dirs.FindPkgsWithFile(doc.FileName, dtPkgs, root, true)
 	}
 	doc.WriteDocs(dtPkgs, depMap, linkDocPkgs, rootPkg, root)
+}
+
+var mapEntry = struct{}{}
+
+func writeDirTree(root, name string) error {
+	treeFile := filepath.Join(root, dirs.TreeFile)
+	log.Printf("INFO - Writing directory tree to file: %s", treeFile)
+	tree, err := dirs.Tree(root, name, []string{"vendor", "testdata", ".*"})
+	if err != nil {
+		log.Print("ERROR - Unable to generate directory tree")
+		return err
+	}
+	err = ioutil.WriteFile(treeFile, []byte(tree), 0644)
+	if err != nil {
+		log.Printf("ERROR - Unable to write directory tree to file %s: %v", treeFile, err)
+		return err
+	}
+	return nil
 }
 
 func findPackagesWithFileAsSlice(signalFile, pkgNames, root, pkgType string) []string {

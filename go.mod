@@ -1,6 +1,6 @@
 module github.com/flowdev/spaghetti-cutter
 
-go 1.14
+go 1.16
 
 require (
 	github.com/hjson/hjson-go v3.0.1+incompatible
