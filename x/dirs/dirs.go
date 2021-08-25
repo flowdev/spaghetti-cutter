@@ -2,6 +2,7 @@ package dirs
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path"
@@ -115,7 +116,7 @@ func Tree(root, name string, exclude []string) (string, error) {
 	return sb.String(), nil
 }
 
-func generateTree(root, name string, sb *strings.Builder, indent string, exclude []string) error {
+func generateTree(root, name string, sb *strings.Builder, prefix string, exclude []string) error {
 	sb.WriteString(name)
 	sb.WriteString(newLine)
 
@@ -125,16 +126,22 @@ func generateTree(root, name string, sb *strings.Builder, indent string, exclude
 		return err
 	}
 
-	lastI := len(files) - 1
-	for i, file := range files {
+	// reduce all files to only the items we want to include
+	var items []fs.DirEntry
+	for _, file := range files {
 		if file.IsDir() && includeFile(file.Name(), exclude) {
-			if i == lastI {
-				sb.WriteString(indent + lastItem)
-				generateTree(filepath.Join(root, file.Name()), file.Name(), sb, indent+emptyItem, exclude)
-			} else {
-				sb.WriteString(indent + middleItem)
-				generateTree(filepath.Join(root, file.Name()), file.Name(), sb, indent+continueItem, exclude)
-			}
+			items = append(items, file)
+		}
+	}
+
+	lastI := len(items) - 1
+	for i, item := range items {
+		if i == lastI {
+			sb.WriteString(prefix + lastItem)
+			generateTree(filepath.Join(root, item.Name()), item.Name(), sb, prefix+emptyItem, exclude)
+		} else {
+			sb.WriteString(prefix + middleItem)
+			generateTree(filepath.Join(root, item.Name()), item.Name(), sb, prefix+continueItem, exclude)
 		}
 	}
 	return nil

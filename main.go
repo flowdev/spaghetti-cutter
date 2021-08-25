@@ -38,7 +38,7 @@ func cut(args []string) int {
 		defaultStats   = "*"
 		usageStats     = "write '" + stat.FileName + "' for packages (separated by ','; '' for none)"
 		defaultDirTree = false
-		usageDirTree   = "write a directory tree to the 'dirtree.txt' file"
+		usageDirTree   = "write a directory tree (starting at the current directory) to: dirtree.txt"
 	)
 	var startDir string
 	var docPkgs string
@@ -129,7 +129,7 @@ func cut(args []string) int {
 	}
 
 	if dirTree {
-		writeDirTree(root, ".")
+		writeDirTree(".", ".")
 	}
 
 	return retCode
