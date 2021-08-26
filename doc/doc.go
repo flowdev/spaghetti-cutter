@@ -143,7 +143,7 @@ func GenerateTable(
 * columns - Imported packages
 
 
-#### Meaning Of Row And Row Header Formating
+#### Meaning Of Row And Row Header Formatting
 
 * **Bold** - God package (can use all packages)
 ` + "* `Code` - Database package (can only use tool and other database packages)" + `
