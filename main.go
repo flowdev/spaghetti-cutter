@@ -39,12 +39,15 @@ func cut(args []string) int {
 		usageStats     = "write '" + stat.FileName + "' for packages (separated by ','; '' for none)"
 		defaultDirTree = false
 		usageDirTree   = "write a directory tree (starting at the current directory) to: dirtree.txt"
+		defaultNoErr   = false
+		usageNoErr     = "don't report errors or exit with an error"
 	)
 	var startDir string
 	var docPkgs string
 	var noLinks bool
 	var statPkgs string
 	var dirTree bool
+	var noErr bool
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
 	fs.StringVar(&startDir, "root", defaultRoot, usageRoot)
 	fs.StringVar(&startDir, "r", defaultRoot, usageRoot+usageShort)
@@ -56,6 +59,8 @@ func cut(args []string) int {
 	fs.StringVar(&statPkgs, "s", defaultStats, usageStats+usageShort)
 	fs.BoolVar(&dirTree, "dirtree", defaultDirTree, usageDirTree)
 	fs.BoolVar(&dirTree, "t", defaultDirTree, usageDirTree+usageShort)
+	fs.BoolVar(&noErr, "noerror", defaultNoErr, usageNoErr)
+	fs.BoolVar(&noErr, "e", defaultNoErr, usageNoErr+usageShort)
 	err := fs.Parse(args)
 	if err != nil {
 		log.Printf("FATAL - %v", err)
@@ -107,13 +112,15 @@ func cut(args []string) int {
 	}
 
 	retCode := 0
-	if len(errs) > 0 {
-		for _, err = range errs {
-			log.Printf("ERROR - %v", err)
+	if !noErr {
+		if len(errs) > 0 {
+			for _, err = range errs {
+				log.Printf("ERROR - %v", err)
+			}
+			retCode = 1
+		} else {
+			log.Print("INFO - No errors found.")
 		}
-		retCode = 1
-	} else {
-		log.Print("INFO - No errors found.")
 	}
 
 	if statPkgs != "" {
