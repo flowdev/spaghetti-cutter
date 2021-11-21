@@ -55,6 +55,7 @@ func (pl PatternList) MatchStringIndex(s string, dollars []string) (idx int, ful
 	if pl == nil {
 		return -1, false
 	}
+	idx = -1
 	for i, p := range pl {
 		if m := p.Regexp.FindStringSubmatch(s); len(m) > 0 {
 			if matchDollars(dollars, m[1:], p.DollarIdxs) {

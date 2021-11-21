@@ -7,6 +7,9 @@
 		// package parse is allowed in API tests
 		// so we can test with real source code
 		"*_test": ["parse"]
+
+		// the central data structures are filled with configuration data
+		"x/config": ["data"]
 	}
 
 	// document and restrict usage of external packages
