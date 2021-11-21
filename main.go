@@ -35,8 +35,8 @@ func cut(args []string) int {
 		usageDoc       = "write '" + doc.FileName + "' for packages (separated by ','; '' for none)"
 		defaultNoLinks = false
 		usageNoLinks   = "don't use links in '" + doc.FileName + "' files"
-		defaultStats   = "*"
-		usageStats     = "write '" + stat.FileName + "' for packages (separated by ','; '' for none)"
+		defaultStats   = false
+		usageStats     = "write '" + stat.FileName + "' for project"
 		defaultDirTree = false
 		usageDirTree   = "write a directory tree (starting at the current directory) to: dirtree.txt"
 		defaultNoErr   = false
@@ -45,7 +45,7 @@ func cut(args []string) int {
 	var startDir string
 	var docPkgs string
 	var noLinks bool
-	var statPkgs string
+	var doStats bool
 	var dirTree bool
 	var noErr bool
 	fs := flag.NewFlagSet("spaghetti-cutter", flag.ExitOnError)
@@ -55,8 +55,8 @@ func cut(args []string) int {
 	fs.StringVar(&docPkgs, "d", defaultDoc, usageDoc+usageShort)
 	fs.BoolVar(&noLinks, "nolinks", defaultNoLinks, usageNoLinks)
 	fs.BoolVar(&noLinks, "l", defaultNoLinks, usageNoLinks+usageShort)
-	fs.StringVar(&statPkgs, "stats", defaultStats, usageStats)
-	fs.StringVar(&statPkgs, "s", defaultStats, usageStats+usageShort)
+	fs.BoolVar(&doStats, "stats", defaultStats, usageStats)
+	fs.BoolVar(&doStats, "s", defaultStats, usageStats+usageShort)
 	fs.BoolVar(&dirTree, "dirtree", defaultDirTree, usageDirTree)
 	fs.BoolVar(&dirTree, "t", defaultDirTree, usageDirTree+usageShort)
 	fs.BoolVar(&noErr, "noerror", defaultNoErr, usageNoErr)
@@ -93,6 +93,8 @@ func cut(args []string) int {
 	log.Printf("INFO - configuration 'noGod': %t", cfg.NoGod)
 	log.Printf("INFO - documenting package(s): %s", docPkgs)
 	log.Printf("INFO - no links in '"+doc.FileName+"' files: %t", noLinks)
+	log.Printf("INFO - write statistics: %t", doStats)
+	log.Printf("INFO - no errors are reported: %t", noErr)
 
 	packs, err := parse.DirTree(root)
 	if err != nil {
@@ -123,8 +125,8 @@ func cut(args []string) int {
 		}
 	}
 
-	if statPkgs != "" {
-		writeStatistics(statPkgs, root, rootPkg, depMap)
+	if doStats {
+		writeStatistics(root, rootPkg, depMap)
 	} else {
 		log.Print("INFO - No statistics wanted.")
 	}
@@ -142,22 +144,18 @@ func cut(args []string) int {
 	return retCode
 }
 
-func writeStatistics(stPkgs, root, rootPkg string, depMap data.DependencyMap) {
+func writeStatistics(root, rootPkg string, depMap data.DependencyMap) {
 	log.Print("INFO - Writing statistics.")
-	statPkgs := findPackagesWithFileAsSlice(stat.FileName, stPkgs, root, "statistics")
 
-	for _, statPkg := range statPkgs {
-		statMD := stat.Generate(statPkg, depMap)
-		if statMD == "" {
-			continue
-		}
-		statFile := filepath.Join(statPkg, stat.FileName)
-		log.Printf("INFO - Writeing package statistics to file: %s", statFile)
-		statFile = filepath.Join(root, statFile)
-		err := ioutil.WriteFile(statFile, []byte(statMD), 0644)
-		if err != nil {
-			log.Printf("ERROR - Unable to write package statistics to file %s: %v", statFile, err)
-		}
+	statMD := stat.Generate(depMap)
+	if statMD == "" {
+		return
+	}
+	log.Printf("INFO - Writing package statistics to file: %s", stat.FileName)
+	statFile := filepath.Join(root, stat.FileName)
+	err := ioutil.WriteFile(statFile, []byte(statMD), 0644)
+	if err != nil {
+		log.Printf("ERROR - Unable to write package statistics to file %s: %v", statFile, err)
 	}
 }
 
@@ -168,6 +166,9 @@ func writeDocumentation(docPkgs, root, rootPkg string, noLinks bool, depMap data
 	linkDocPkgs := map[string]struct{}{}
 	if !noLinks {
 		linkDocPkgs = dirs.FindPkgsWithFile(doc.FileName, dtPkgs, root, true)
+		for _, p := range dtPkgs {
+			linkDocPkgs[p] = struct{}{}
+		}
 	}
 	doc.WriteDocs(dtPkgs, depMap, linkDocPkgs, rootPkg, root)
 }

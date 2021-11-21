@@ -176,7 +176,7 @@ func isTestPackage(rel, strict string) bool {
 	return strings.HasSuffix(p, "_test")
 }
 
-func isPackageInList(pl *config.PatternList, dollars []string, pkg, strictPkg string) (atAll, full bool) {
+func isPackageInList(pl data.PatternList, dollars []string, pkg, strictPkg string) (atAll, full bool) {
 	if strictPkg != "" {
 		if atAll, full := pl.MatchString(strictPkg, dollars); atAll {
 			return true, full

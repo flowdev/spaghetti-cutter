@@ -1,6 +1,10 @@
 package data
 
-import "log"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
 
 // PkgType can be one of: Standard, Tool, DB or God
 type PkgType int
@@ -22,12 +26,6 @@ type PkgImports struct {
 	Imports map[string]PkgType
 }
 
-// DependencyMap is mapping importing package to imported packages.
-// importingPackageName -> (importedPackageName -> PkgType)
-// An imported package name could be added multiple times to the same importing
-// package name due to test packages.
-type DependencyMap map[string]PkgImports
-
 // TypeLetter returns the type letter associated with package type t ('S', 'T',
 // 'D' or 'G').
 func TypeLetter(t PkgType) rune {
@@ -40,30 +38,55 @@ func TypeFormat(t PkgType) string {
 	return typeFormats[t]
 }
 
-// FilterDepMap filters allMap to contain only startPkg and it's transitive
-// dependencies.  Entries in linkMap are filtered, too.
-func FilterDepMap(allMap DependencyMap, startPkg string, linkMap map[string]struct{}) DependencyMap {
-	if (startPkg == "/" || startPkg == "") && len(linkMap) == 0 {
+type EnumDollar int
+
+// internal enum for '$' handling in patterns
+const (
+	EnumDollarNone  EnumDollar = iota // '$' isn't allowed at all
+	EnumDollarStar                    // '$' has to be followed by one or two '*'
+	EnumDollarDigit                   // '$' has to be followed by a single digit (1-9)
+)
+
+// Pattern combines the original pattern string with a compiled regular
+// expression ready for efficient evaluation.
+type Pattern struct {
+	Pattern    string
+	Regexp     *regexp.Regexp
+	DollarIdxs []int
+}
+
+// DependencyMap is mapping importing package to imported packages.
+// importingPackageName -> (importedPackageNames -> PkgType)
+// An imported package name could be added multiple times to the same importing
+// package name due to test packages.
+type DependencyMap map[string]PkgImports
+
+// FilterDepMap filters allMap to contain only packages matching idx and it's transitive
+// dependencies.  Entries matching other indices in links are filtered, too.
+func FilterDepMap(allMap DependencyMap, idx int, links PatternList) DependencyMap {
+	if idx < 0 || len(links) == 0 {
 		return allMap
 	}
-	if _, ok := allMap[startPkg]; !ok {
-		log.Printf("ERROR - Unable to find start package %q for dependency table.", startPkg)
-		return nil
-	}
+
 	fltrMap := make(DependencyMap, len(allMap))
-	CopyDepsRecursive(allMap, startPkg, fltrMap, linkMap)
+	for pkg := range allMap {
+		if i, full := links.MatchStringIndex(pkg, nil); full && i == idx {
+			copyDepsRecursive(allMap, pkg, fltrMap, links, idx)
+		}
+	}
 	return fltrMap
 }
 
-// CopyDepsRecursive copies dependencies recursively from allMap into fltrMap
+// copyDepsRecursive copies dependencies recursively from allMap into fltrMap
 // starting at startPkg and ignoring entries in linkMap.
-func CopyDepsRecursive(
+func copyDepsRecursive(
 	allMap DependencyMap,
 	startPkg string,
 	fltrMap DependencyMap,
-	linkMap map[string]struct{},
+	links PatternList,
+	idx int,
 ) {
-	if _, ok := linkMap[startPkg]; ok {
+	if i, full := links.MatchStringIndex(startPkg, nil); full && i != idx {
 		return
 	}
 	imps, ok := allMap[startPkg]
@@ -72,6 +95,152 @@ func CopyDepsRecursive(
 	}
 	fltrMap[startPkg] = imps
 	for pkg := range imps.Imports {
-		CopyDepsRecursive(allMap, pkg, fltrMap, linkMap)
+		copyDepsRecursive(allMap, pkg, fltrMap, links, idx)
 	}
+}
+
+func PkgForPattern(pkg string) string {
+	i := strings.IndexRune(pkg, '*')
+	if i < 0 {
+		return pkg
+	}
+	i = strings.LastIndex(pkg[:i], "/")
+	if i > 0 {
+		return pkg[:i]
+	}
+	return ""
+}
+
+func RegexpForPattern(pattern string, allowDollar EnumDollar, maxDollar int,
+) (*regexp.Regexp, int, []int, error) {
+	const noDollarErrorText = "a '$' has to be escaped for this configuration key"
+	const dollarStarErrorText = "a '$' has to be escaped or followed by one or two unescaped '*'s"
+	const dollarDigitErrorText = "a '$' has to be escaped or followed by a single digit (1-9)"
+	const singleStarPattern = `(?:[^/]*)`
+	const doubleStarPattern = `(?:.*)`
+	re := regexp.MustCompile(`(?:\\*\$)?(?:\\*\*\*?|[1-9])?`) // constant and tested by ANY unit test
+	errText := ""
+	dollarCount := 0
+	dollarIdxs := make([]int, 0, 9)
+
+	pattern = re.ReplaceAllStringFunc(pattern, func(s string) string {
+		if s == "" {
+			return s
+		}
+
+		if len(s) == 1 {
+			switch s {
+			case "$":
+				switch allowDollar {
+				case EnumDollarNone:
+					errText = noDollarErrorText
+					break
+				case EnumDollarStar:
+					errText = dollarStarErrorText
+					break
+				default:
+					errText = dollarDigitErrorText
+				}
+				return "<error>"
+			case "*":
+				return singleStarPattern
+			default:
+				return s
+			}
+		}
+
+		prefix := ``
+		if n := countBackslashes(s); n > 0 && len(s) > n && s[n] == '$' {
+			if n%2 == 0 { // even number of `\`: '$' is NOT escaped!
+				prefix = s[:n]
+				s = s[n:]
+			} else { // odd number of `\`: '$' is escaped
+				prefix = s[:n+1]
+				s = s[n+1:]
+			}
+		}
+		if s == "" {
+			return prefix
+		}
+		if len(s) == 1 {
+			if s == "*" {
+				return prefix + singleStarPattern
+			}
+			return prefix + s // s is a digit
+		}
+
+		if n := countBackslashes(s); n > 0 {
+			if n%2 == 0 { // even number of `\`: '*' is NOT escaped!
+				prefix += s[:n]
+				s = s[n:]
+			} else { // odd number of `\`: '*' is escaped
+				prefix += s[:n+1]
+				s = s[n+1:]
+				if s == "" {
+					return prefix
+				}
+			}
+		}
+		if s[0] == '$' {
+			if allowDollar == EnumDollarNone {
+				errText = noDollarErrorText
+				return "<error>"
+			}
+			if s[1] == '\\' {
+				switch allowDollar {
+				case EnumDollarStar:
+					errText = dollarStarErrorText
+					break
+				default:
+					errText = dollarDigitErrorText
+				}
+				return `<error>`
+			}
+			dollarCount++
+			if len(s) > 2 {
+				return prefix + `(.*)`
+			}
+			if s[1] == '*' {
+				return prefix + `([^/]*)`
+			}
+
+			// DIGIT: remember index and capture the value
+			dollarIdx := int(s[1] - '1')
+			if dollarIdx >= maxDollar {
+				errText = fmt.Sprintf("the maximum possible dollar index is %d, found index %d", maxDollar, dollarIdx+1)
+				return `<error>`
+			}
+			dollarIdxs = append(dollarIdxs, dollarIdx)
+			return prefix + `(.*)`
+		}
+		if len(s) > 1 {
+			return prefix + doubleStarPattern
+		}
+		return prefix + singleStarPattern
+	})
+
+	if errText != "" {
+		return nil, 0, nil, fmt.Errorf("%s; resulting regular expression: %s", errText, pattern)
+	}
+
+	var err error
+	if allowDollar == EnumDollarStar {
+		re, err = regexp.Compile("^" + pattern + "$")
+	} else {
+		re, err = regexp.Compile("^" + pattern)
+	}
+	if dollarCount > 0 && allowDollar == EnumDollarDigit {
+		return re, dollarCount, dollarIdxs, err
+	}
+	return re, dollarCount, nil, err
+}
+func countBackslashes(s string) int {
+	count := 0
+	for _, r := range s {
+		if r != '\\' {
+			return count
+		}
+		count++
+	}
+	return count
 }

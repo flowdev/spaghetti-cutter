@@ -25,17 +25,15 @@ const (
 	titleMinScore = `Packages Shielded From All Users Of `
 )
 
-// Generate creates some statistics for each package in the filtered dependency
-// map starting at startPkg:
+// Generate creates some statistics for each package in the dependency map:
 // - the type of the package ('S', 'T', 'D' or 'G')
 // - number of direct dependencies
 // - number of dependencies including transitive dependencies
 // - number of packages using it
 // - maximum and minimum score for encapsulating/hiding transitive packages
-func Generate(startPkg string, depMap data.DependencyMap) string {
-	depMap = data.FilterDepMap(depMap, startPkg, nil)
+func Generate(depMap data.DependencyMap) string {
 	if len(depMap) == 0 {
-		log.Printf("INFO - Won't write stats for package %q because it has no dependencies.", startPkg)
+		log.Printf("INFO - Won't write statistics because there are no dependencies.")
 		return ""
 	}
 
@@ -45,8 +43,6 @@ func Generate(startPkg string, depMap data.DependencyMap) string {
 	sb := &strings.Builder{}
 	sb2 := &strings.Builder{}
 	sb.WriteString(`# Package Statistics
-
-Start package - ` + startPkg + `
 
 | package | type | direct deps | all deps | users | max score | min score |
 | :- | :-: | -: | -: | -: | -: | -: |
@@ -172,6 +168,7 @@ Start package - ` + startPkg + `
 * min score - number of packages hidden from all user packages combined.
 `)
 	sb.WriteString(sb2.String())
+	sb.WriteString("\n")
 	return sb.String()
 }
 

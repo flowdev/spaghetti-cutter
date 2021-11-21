@@ -24,41 +24,63 @@ func WriteDocs(
 	linkDocPkgs map[string]struct{},
 	rootPkg, root string,
 ) {
-	for _, dtPkg := range dtPkgs {
-		delete(linkDocPkgs, dtPkg)
-		writeDoc(dtPkg, depMap, linkDocPkgs, rootPkg, root)
-		linkDocPkgs[dtPkg] = struct{}{}
+	pl, err := data.NewSimplePatternList(dtPkgs, "--doc")
+	if err != nil {
+		log.Printf("ERROR - Unable to create dependency tables: %v", err)
+		return
+	}
+
+	docFiles := docFilesForPkgs(dtPkgs)
+	for i := range pl {
+		writeDoc(i, pl, docFiles, depMap, rootPkg, root)
 	}
 }
+func docFilesForPkgs(pkgs []string) []string {
+	files := make([]string, len(pkgs))
+	for i, p := range pkgs {
+		docFile := filepath.Join(data.PkgForPattern(p), FileName)
+		files[i] = docFile
+	}
+	return files
+}
+
+// IDEAS:
+// - Each linkDocPkg can be a pattern
+// - A package matching the pattern will be linked to the corresponding file
+// - A package matching the pattern will be handled in the corresponding file
 
 func writeDoc(
-	dtPkg string,
+	idx int,
+	links data.PatternList,
+	docFiles []string,
 	depMap data.DependencyMap,
-	linkDocPkgs map[string]struct{},
 	rootPkg, root string,
 ) {
-	doc := GenerateTable(depMap, linkDocPkgs, rootPkg, dtPkg)
+	doc := GenerateTable(idx, links, docFiles, depMap, rootPkg)
 	if doc == "" {
 		return
 	}
-	docFile := filepath.Join(dtPkg, FileName)
-	log.Printf("INFO - Write dependency table to file: %s", docFile)
-	docFile = filepath.Join(root, docFile)
+	log.Printf("INFO - Write dependency table to file: %s", docFiles[idx])
+	docFile := filepath.Join(root, docFiles[idx])
 	err := ioutil.WriteFile(docFile, []byte(doc), 0644)
 	if err != nil {
 		log.Printf("ERROR - Unable to write dependency table to file %s: %v", docFile, err)
 	}
 }
 
-// GenerateTable generates the dependency matrix for the package 'relPkg'.
+// GenerateTable generates the dependency matrix for the idx package(s) from links.
 func GenerateTable(
+	idx int,
+	links data.PatternList,
+	docFiles []string,
 	depMap data.DependencyMap,
-	linkDocPkgs map[string]struct{},
-	rootPkg, relPkg string,
+	rootPkg string,
 ) string {
-	depMap = data.FilterDepMap(depMap, relPkg, linkDocPkgs)
+	startPkg := filepath.ToSlash(filepath.Dir(docFiles[idx]))
+	pattern := links[idx].Pattern
+	depMap = data.FilterDepMap(depMap, idx, links)
 	if len(depMap) == 0 {
-		log.Printf("INFO - Won't write doc for package %q because it has no dependencies.", relPkg)
+		log.Printf("INFO - Won't write doc for package %q because it has no dependencies.", pattern)
 		return ""
 	}
 	allRows := make([]string, 0, len(depMap))
@@ -79,7 +101,7 @@ func GenerateTable(
 	sort.Strings(allCols)
 
 	sb := &strings.Builder{}
-	intro := `# Dependency Table For: ` + path.Join(rootPkg, relPkg) + `
+	intro := `# Dependency Table For: ` + path.Join(rootPkg, pattern) + `
 
 | `
 	sb.WriteString(intro)
@@ -87,19 +109,20 @@ func GenerateTable(
 	// (column) header line: | | C o l 1 - G | C o l 2 | ... | C o l N - T |
 	for _, col := range allCols {
 		sb.WriteString("| ")
-		if _, ok := linkDocPkgs[col]; ok {
+		colIdx, full := links.MatchStringIndex(col, nil)
+		if full && colIdx != idx {
 			sb.WriteRune('[')
 		}
 		for _, r := range col {
 			sb.WriteRune(r)
 			sb.WriteRune(' ')
 		}
-		letter := data.TypeLetter(allColsMap[col])
 		sb.WriteString("- ")
+		letter := data.TypeLetter(allColsMap[col])
 		sb.WriteRune(letter)
-		if _, ok := linkDocPkgs[col]; ok {
+		if full && colIdx != idx {
 			sb.WriteString("](")
-			sb.WriteString(path.Join(RelPath(relPkg, col), FileName))
+			sb.WriteString(RelPath(startPkg, filepath.ToSlash(docFiles[colIdx])))
 			sb.WriteString(") ")
 		}
 		sb.WriteRune(' ')

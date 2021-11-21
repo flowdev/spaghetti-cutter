@@ -2,12 +2,13 @@
 
 | | d a t a - T | d e p s - S | d o c - S | p a r s e - S | s i z e - S | s t a t - S | x / c o n f i g - T | x / d i r s - T | x / p k g s - T |
 | :- | :- | :- | :- | :- | :- | :- | :- | :- | :- |
-| **/** | **T** | **S** | **S** | **S** | **S** | **S** | **T** | **T** | **T** |
+| / | T | S | S | S | S | S | T | T | T |
 | deps | T | | | | | | T | | T |
 | doc | T | | | | | | | | |
 | parse | | | | | | | | | T |
 | size | | | | | | | | | T |
 | stat | T | | | | | | | | |
+| _x/config_ | _T_ | | | | | | | | |
 
 ### Legend
 
