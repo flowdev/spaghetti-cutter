@@ -130,7 +130,8 @@ func Generate(depMap data.DependencyMap) string {
 
 #### ` + titleMaxScore + pkgTitle + `
 `)
-			for p, noImps := range maxScoreMap {
+			for _, p := range sortedKeys(maxScoreMap) {
+				noImps := maxScoreMap[p]
 				sb2.WriteString("* " + fragmentLink(p) + ": ")
 				writePackageLinks(sb2, noImps, depMap)
 				sb2.WriteString("\n")
@@ -170,6 +171,15 @@ func Generate(depMap data.DependencyMap) string {
 	sb.WriteString(sb2.String())
 	sb.WriteString("\n")
 	return sb.String()
+}
+
+func sortedKeys(m map[string]map[string]struct{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func sortPkgNames(depMap data.DependencyMap) []string {
