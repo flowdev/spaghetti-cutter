@@ -70,15 +70,12 @@ func FilterDepMap(allMap DependencyMap, idx int, links PatternList) DependencyMa
 
 	fltrMap := make(DependencyMap, len(allMap))
 	for pkg := range allMap {
-		if i, full := links.MatchStringIndex(pkg, nil); full && i == idx {
+		if i := DocMatchStringIndex(pkg, links); i >= 0 && i == idx {
 			copyDepsRecursive(allMap, pkg, fltrMap, links, idx)
 		}
 	}
 	return fltrMap
 }
-
-// copyDepsRecursive copies dependencies recursively from allMap into fltrMap
-// starting at startPkg and ignoring entries in linkMap.
 func copyDepsRecursive(
 	allMap DependencyMap,
 	startPkg string,
@@ -86,7 +83,7 @@ func copyDepsRecursive(
 	links PatternList,
 	idx int,
 ) {
-	if i, full := links.MatchStringIndex(startPkg, nil); full && i != idx {
+	if i := DocMatchStringIndex(startPkg, links); i >= 0 && i != idx {
 		return
 	}
 	imps, ok := allMap[startPkg]
@@ -97,6 +94,21 @@ func copyDepsRecursive(
 	for pkg := range imps.Imports {
 		copyDepsRecursive(allMap, pkg, fltrMap, links, idx)
 	}
+}
+
+// DocMatchStringIndex matches pkg in links and returns its index.
+// Only full matches are returned. If pkg doesn't match, pkg+"/" is tried.
+// -1 is returned for no match.
+func DocMatchStringIndex(pkg string, links PatternList) (idx int) {
+	i, full := links.MatchStringIndex(pkg, nil)
+	if full {
+		return i
+	}
+	i, full = links.MatchStringIndex(pkg+"/", nil)
+	if full {
+		return i
+	}
+	return -1
 }
 
 func PkgForPattern(pkg string) string {

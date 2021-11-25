@@ -9,6 +9,9 @@ spaghetti-cutter.linux
 spaghetti-cutter.macos
 spaghetti-cutter.windows
 
+# Personal IDE files
+.idea
+
 # Test binary, built with `go test -c`
 *.test
 

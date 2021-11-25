@@ -109,8 +109,8 @@ func GenerateTable(
 	// (column) header line: | | C o l 1 - G | C o l 2 | ... | C o l N - T |
 	for _, col := range allCols {
 		sb.WriteString("| ")
-		colIdx, full := links.MatchStringIndex(col, nil)
-		if full && colIdx != idx {
+		colIdx := data.DocMatchStringIndex(col, links)
+		if colIdx >= 0 && colIdx != idx {
 			sb.WriteRune('[')
 		}
 		for _, r := range col {
@@ -120,7 +120,7 @@ func GenerateTable(
 		sb.WriteString("- ")
 		letter := data.TypeLetter(allColsMap[col])
 		sb.WriteRune(letter)
-		if full && colIdx != idx {
+		if colIdx >= 0 && colIdx != idx {
 			sb.WriteString("](")
 			sb.WriteString(RelPath(startPkg, filepath.ToSlash(docFiles[colIdx])))
 			sb.WriteString(") ")
