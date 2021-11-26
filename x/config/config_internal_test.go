@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/flowdev/spaghetti-cutter/data"
 	"reflect"
 	"testing"
 )
@@ -9,7 +10,7 @@ func TestRegexpForPattern(t *testing.T) {
 	specs := []struct {
 		name             string
 		givenPattern     string
-		givenAllowDollar enumDollar
+		givenAllowDollar data.EnumDollar
 		givenMaxDollar   int
 		expectedDollars  int
 		expectedIdxs     []int
@@ -20,112 +21,112 @@ func TestRegexpForPattern(t *testing.T) {
 		{
 			name:             "empty",
 			givenPattern:     ``,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^$`,
 			expectedError:    false,
 		}, {
 			name:             "simple",
 			givenPattern:     `abcd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^abcd$`,
 			expectedError:    false,
 		}, {
 			name:             "double-backslash",
 			givenPattern:     `ab\\\\\\cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\\\\cd$`,
 			expectedError:    false,
 		}, {
 			name:             "one-star",
 			givenPattern:     `ab*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "two-stars",
 			givenPattern:     `ab**cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab(?:.*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "unescaped-one-star",
 			givenPattern:     `ab\\\\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\\(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-one-star",
 			givenPattern:     `ab\\\\\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\\\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-two-stars",
 			givenPattern:     `ab\\\\\*\\\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\\\*\\\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar",
 			givenPattern:     `ab\\\\\$\\\$cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\\\$\\\$cd$`,
 			expectedError:    false,
 		}, {
 			name:             "dollar-one-star",
 			givenPattern:     `ab$*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  1,
 			expectedRegexp:   `^ab([^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "dollar-two-stars",
 			givenPattern:     `ab$**cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  1,
 			expectedRegexp:   `^ab(.*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-escaped-star",
 			givenPattern:     `ab\$\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\$\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-escaped-star-star",
 			givenPattern:     `ab\$\**cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\$\*(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-star",
 			givenPattern:     `ab\$*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\$(?:[^/]*)cd$`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-escaped-star-escaped-star",
 			givenPattern:     `ab\$\*\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\$\*\*cd$`,
 			expectedError:    false,
 		}, {
 			name:             "all-good-cases",
 			givenPattern:     `**se*a**fo\*o\**l/do\*\*or a\nd wi$*do$**ws or n\$\*ot a\$*ll th\$\**at g\$re\$\*\*at at al\$**l`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  2,
 			expectedRegexp:   `^(?:.*)se(?:[^/]*)a(?:.*)fo\*o\*(?:[^/]*)l/do\*\*or a\nd wi([^/]*)do(.*)ws or n\$\*ot a\$(?:[^/]*)ll th\$\*(?:[^/]*)at g\$re\$\*\*at at al\$(?:.*)l$`,
 			expectedError:    false,
@@ -134,28 +135,28 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "one-star",
 			givenPattern:     `ab*cd`,
-			givenAllowDollar: enumNoDollar,
+			givenAllowDollar: data.EnumDollarNone,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab(?:[^/]*)cd`,
 			expectedError:    false,
 		}, {
 			name:             "two-stars",
 			givenPattern:     `ab**cd`,
-			givenAllowDollar: enumNoDollar,
+			givenAllowDollar: data.EnumDollarNone,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab(?:.*)cd`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-one-star",
 			givenPattern:     `ab\$*cd`,
-			givenAllowDollar: enumNoDollar,
+			givenAllowDollar: data.EnumDollarNone,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\$(?:[^/]*)cd`,
 			expectedError:    false,
 		}, {
 			name:             "escaped-dollar-two-stars",
 			givenPattern:     `ab\$**cd`,
-			givenAllowDollar: enumNoDollar,
+			givenAllowDollar: data.EnumDollarNone,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\$(?:.*)cd`,
 			expectedError:    false,
@@ -164,7 +165,7 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "dollar-digit",
 			givenPattern:     `ab$1cd`,
-			givenAllowDollar: enumDollarDigit,
+			givenAllowDollar: data.EnumDollarDigit,
 			givenMaxDollar:   1,
 			expectedDollars:  1,
 			expectedIdxs:     []int{0},
@@ -173,7 +174,7 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "unescaped-dollar-digit",
 			givenPattern:     `ab\\\\$1cd`,
-			givenAllowDollar: enumDollarDigit,
+			givenAllowDollar: data.EnumDollarDigit,
 			givenMaxDollar:   1,
 			expectedDollars:  1,
 			expectedIdxs:     []int{0},
@@ -182,7 +183,7 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "dollar-double-digit",
 			givenPattern:     `ab$31cd`,
-			givenAllowDollar: enumDollarDigit,
+			givenAllowDollar: data.EnumDollarDigit,
 			givenMaxDollar:   3,
 			expectedDollars:  1,
 			expectedIdxs:     []int{2},
@@ -191,7 +192,7 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "escaped-dollar-digit",
 			givenPattern:     `ab\\\$3cd`,
-			givenAllowDollar: enumDollarDigit,
+			givenAllowDollar: data.EnumDollarDigit,
 			givenMaxDollar:   1,
 			expectedDollars:  0,
 			expectedRegexp:   `^ab\\\$3cd`,
@@ -199,7 +200,7 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "many-dollars",
 			givenPattern:     `a$3b$1c$2d`,
-			givenAllowDollar: enumDollarDigit,
+			givenAllowDollar: data.EnumDollarDigit,
 			givenMaxDollar:   3,
 			expectedDollars:  3,
 			expectedIdxs:     []int{2, 0, 1},
@@ -210,49 +211,49 @@ func TestRegexpForPattern(t *testing.T) {
 		}, {
 			name:             "illegal-regexp",
 			givenPattern:     `ab[cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
 		}, {
 			name:             "unescaped-allowed-dollar",
 			givenPattern:     `ab$cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
 		}, {
 			name:             "unescaped-unallowed-dollar",
 			givenPattern:     `ab$cd`,
-			givenAllowDollar: enumNoDollar,
+			givenAllowDollar: data.EnumDollarNone,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
 		}, {
 			name:             "dollar-escaped-star",
 			givenPattern:     `ab$\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
 		}, {
 			name:             "escaped-backslash-dollar-escaped-star",
 			givenPattern:     `ab\\$\*cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
 		}, {
 			name:             "dollar-escaped-star-star",
 			givenPattern:     `ab$\**cd`,
-			givenAllowDollar: enumDollarStar,
+			givenAllowDollar: data.EnumDollarStar,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
 		}, {
 			name:             "dollar-not-allowed",
 			givenPattern:     `ab$*cd`,
-			givenAllowDollar: enumNoDollar,
+			givenAllowDollar: data.EnumDollarNone,
 			expectedDollars:  0,
 			expectedRegexp:   ``,
 			expectedError:    true,
@@ -262,7 +263,7 @@ func TestRegexpForPattern(t *testing.T) {
 	for _, spec := range specs {
 		t.Run(spec.name, func(t *testing.T) {
 			t.Logf("pattern=%q, allowedDollar=%d", spec.givenPattern, spec.givenAllowDollar)
-			actualRegexp, actualDollars, actualIdxs, err := regexpForPattern(spec.givenPattern, spec.givenAllowDollar, spec.givenMaxDollar)
+			actualRegexp, actualDollars, actualIdxs, err := data.RegexpForPattern(spec.givenPattern, spec.givenAllowDollar, spec.givenMaxDollar)
 			testOn := checkError(t, err, spec.expectedError)
 			if !testOn {
 				return

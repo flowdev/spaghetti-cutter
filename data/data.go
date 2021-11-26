@@ -61,7 +61,7 @@ type Pattern struct {
 // package name due to test packages.
 type DependencyMap map[string]PkgImports
 
-// FilterDepMap filters allMap to contain only packages matching idx and it's transitive
+// FilterDepMap filters allMap to contain only packages matching idx and its transitive
 // dependencies.  Entries matching other indices in links are filtered, too.
 func FilterDepMap(allMap DependencyMap, idx int, links PatternList) DependencyMap {
 	if idx < 0 || len(links) == 0 {

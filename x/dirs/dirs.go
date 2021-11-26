@@ -47,8 +47,8 @@ func crawlUpAndFindDirOf(startDir string, files ...string) (string, error) {
 
 	for ; absDir != volName && absDir != oldDir; absDir = filepath.Dir(absDir) {
 		for _, file := range files {
-			path := filepath.Join(absDir, file)
-			if _, err = os.Stat(path); err == nil {
+			p := filepath.Join(absDir, file)
+			if _, err = os.Stat(p); err == nil {
 				return absDir, nil
 			}
 		}

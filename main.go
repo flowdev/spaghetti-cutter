@@ -138,7 +138,11 @@ func cut(args []string) int {
 	}
 
 	if dirTree {
-		writeDirTree(".", ".")
+		err := writeDirTree(".", ".")
+		if err != nil {
+			log.Printf("FATAL - %v", err)
+			return 6
+		}
 	}
 
 	return retCode
@@ -192,17 +196,17 @@ func writeDirTree(root, name string) error {
 }
 
 func findPackagesWithFileAsSlice(signalFile, pkgNames, root, pkgType string) []string {
-	var pkgs []string
+	var packs []string
 	if pkgNames == "*" { // find all existing files
 		pkgMap := dirs.FindPkgsWithFile(signalFile, nil, root, false)
-		pkgs = make([]string, 0, len(pkgMap))
+		packs = make([]string, 0, len(pkgMap))
 		for p := range pkgMap {
-			pkgs = append(pkgs, p)
+			packs = append(packs, p)
 		}
 	} else { // write explicitly given docs
-		pkgs = splitPackageNames(pkgNames, pkgType)
+		packs = splitPackageNames(pkgNames, pkgType)
 	}
-	return pkgs
+	return packs
 }
 
 func splitPackageNames(docPkgs, pkgType string) []string {

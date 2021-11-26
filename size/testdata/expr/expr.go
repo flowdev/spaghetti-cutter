@@ -54,7 +54,7 @@ var ( // ellipsis?
 
 var ( // struct type
 	structType_13 = struct {
-		i    int `tag: "bla"`
+		i    int `tag:"bla"`
 		j    int
 		s, t string
 	}{

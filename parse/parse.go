@@ -18,14 +18,14 @@ func DirTree(root string) ([]*pkgs.Package, error) {
 		Mode:  packages.NeedName | packages.NeedImports | packages.NeedSyntax,
 	}
 
-	pkgs, err := packages.Load(parseCfg, root+"/...")
+	packs, err := packages.Load(parseCfg, root+"/...")
 	if err != nil {
 		return nil, err
 	}
-	if packages.PrintErrors(pkgs) > 0 {
+	if packages.PrintErrors(packs) > 0 {
 		return nil, errors.New("unable to parse packages at root: " + root)
 	}
-	return pkgs, nil
+	return packs, nil
 }
 
 // RootPkg returns the package path of the root package of all the given

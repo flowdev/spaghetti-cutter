@@ -240,7 +240,7 @@ But that is difficult to keep in sync when collaborating with others in a team.
 A much better approach for teams goes this way:
 
 First include the latest version in your `go.mod` file, e.g.:
-```Go
+```
 require (
 	github.com/flowdev/spaghetti-cutter v0.9
 )
