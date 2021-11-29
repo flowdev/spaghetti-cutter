@@ -2,21 +2,10 @@ package dirs
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
-)
-
-const (
-	TreeFile     = "dirtree.txt"
-	newLine      = "\n"
-	emptyItem    = "    "
-	middleItem   = "├── "
-	continueItem = "│   "
-	lastItem     = "└── "
 )
 
 // FindRoot finds the root of a project.
@@ -104,54 +93,4 @@ func FindPkgsWithFile(file string, startPkgs []string, root string, excludeRoot 
 		log.Printf("ERROR - Unable to walk the path %q: %v", root, err)
 	}
 	return retPkgs
-}
-
-func Tree(root, name string, exclude []string) (string, error) {
-	sb := &strings.Builder{}
-
-	err := generateTree(root, name, sb, "", exclude)
-	if err != nil {
-		return "", err
-	}
-	return sb.String(), nil
-}
-
-func generateTree(root, name string, sb *strings.Builder, prefix string, exclude []string) error {
-	sb.WriteString(name)
-	sb.WriteString(newLine)
-
-	files, err := os.ReadDir(root)
-	if err != nil {
-		log.Printf("ERROR - Unable to read the directory %q: %v", root, err)
-		return err
-	}
-
-	// reduce all files to only the items we want to include
-	var items []fs.DirEntry
-	for _, file := range files {
-		if file.IsDir() && includeFile(file.Name(), exclude) {
-			items = append(items, file)
-		}
-	}
-
-	lastI := len(items) - 1
-	for i, item := range items {
-		if i == lastI {
-			sb.WriteString(prefix + lastItem)
-			generateTree(filepath.Join(root, item.Name()), item.Name(), sb, prefix+emptyItem, exclude)
-		} else {
-			sb.WriteString(prefix + middleItem)
-			generateTree(filepath.Join(root, item.Name()), item.Name(), sb, prefix+continueItem, exclude)
-		}
-	}
-	return nil
-}
-
-func includeFile(name string, exclude []string) bool {
-	for _, ex := range exclude {
-		if m, _ := path.Match(ex, name); m {
-			return false
-		}
-	}
-	return true
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/size"
 	"github.com/flowdev/spaghetti-cutter/stat"
+	"github.com/flowdev/spaghetti-cutter/tree"
 	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/dirs"
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
@@ -126,7 +127,7 @@ func cut(args []string) int {
 	}
 
 	if doStats {
-		writeStatistics(root, rootPkg, depMap)
+		writeStatistics(root, depMap)
 	} else {
 		log.Print("INFO - No statistics wanted.")
 	}
@@ -138,7 +139,7 @@ func cut(args []string) int {
 	}
 
 	if dirTree {
-		err := writeDirTree(".", ".")
+		err := writeDirTree(".", ".", packs)
 		if err != nil {
 			log.Printf("FATAL - %v", err)
 			return 6
@@ -148,7 +149,7 @@ func cut(args []string) int {
 	return retCode
 }
 
-func writeStatistics(root, rootPkg string, depMap data.DependencyMap) {
+func writeStatistics(root string, depMap data.DependencyMap) {
 	log.Print("INFO - Writing statistics.")
 
 	statMD := stat.Generate(depMap)
@@ -177,17 +178,15 @@ func writeDocumentation(docPkgs, root, rootPkg string, noLinks bool, depMap data
 	doc.WriteDocs(dtPkgs, depMap, linkDocPkgs, rootPkg, root)
 }
 
-var mapEntry = struct{}{}
-
-func writeDirTree(root, name string) error {
-	treeFile := filepath.Join(root, dirs.TreeFile)
+func writeDirTree(root, name string, packs []*pkgs.Package) error {
+	treeFile := filepath.Join(root, tree.File)
 	log.Printf("INFO - Writing directory tree to file: %s", treeFile)
-	tree, err := dirs.Tree(root, name, []string{"vendor", "testdata", ".*"})
+	tr, err := tree.Generate(root, name, []string{"vendor", "testdata", ".*"}, packs)
 	if err != nil {
 		log.Print("ERROR - Unable to generate directory tree")
 		return err
 	}
-	err = ioutil.WriteFile(treeFile, []byte(tree), 0644)
+	err = ioutil.WriteFile(treeFile, []byte(tr), 0644)
 	if err != nil {
 		log.Printf("ERROR - Unable to write directory tree to file %s: %v", treeFile, err)
 		return err
