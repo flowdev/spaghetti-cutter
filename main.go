@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -139,7 +140,7 @@ func cut(args []string) int {
 	}
 
 	if dirTree {
-		err := writeDirTree(".", ".", packs)
+		err := writeDirTree(".", path.Base(rootPkg), packs)
 		if err != nil {
 			log.Printf("FATAL - %v", err)
 			return 6

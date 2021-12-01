@@ -1,3 +1,4 @@
+// Package size computes the size/complexity of a package and checks it against a given maximum.
 package size
 
 import (
