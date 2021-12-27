@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -38,6 +39,7 @@ func TypeFormat(t PkgType) string {
 	return typeFormats[t]
 }
 
+// EnumDollar is an enumeration type for how to hanlde dollars ('$') in patterns.
 type EnumDollar int
 
 // internal enum for '$' handling in patterns
@@ -60,6 +62,16 @@ type Pattern struct {
 // An imported package name could be added multiple times to the same importing
 // package name due to test packages.
 type DependencyMap map[string]PkgImports
+
+// SortedPkgNames returns the sorted keys (package names) of the dependency map.
+func (dm DependencyMap) SortedPkgNames() []string {
+	names := make([]string, 0, len(dm))
+	for pkg := range dm {
+		names = append(names, pkg)
+	}
+	sort.Strings(names)
+	return names
+}
 
 // FilterDepMap filters allMap to contain only packages matching idx and its transitive
 // dependencies.  Entries matching other indices in links are filtered, too.
@@ -111,6 +123,10 @@ func DocMatchStringIndex(pkg string, links PatternList) (idx int) {
 	return -1
 }
 
+// PkgForPattern returns the (parent) package of the given package pattern.
+// If pkg doesn't contain any wildcard '*' the whole string is returned.
+// Otherwise everything up to the last '/' before the wildcard or
+// the empty string if there is no '/' before it.
 func PkgForPattern(pkg string) string {
 	i := strings.IndexRune(pkg, '*')
 	if i < 0 {
@@ -123,6 +139,8 @@ func PkgForPattern(pkg string) string {
 	return ""
 }
 
+// RegexpForPattern converts the given pattern including wildcards and variables
+// into a proper regular expression that can be used for matching.
 func RegexpForPattern(pattern string, allowDollar EnumDollar, maxDollar int,
 ) (*regexp.Regexp, int, []int, error) {
 	const noDollarErrorText = "a '$' has to be escaped for this configuration key"

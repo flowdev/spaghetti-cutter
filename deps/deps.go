@@ -53,6 +53,8 @@ func checkPkg(
 	checkSpecial func(string, string, string, string, config.Config) error,
 	imps *data.PkgImports,
 ) (errs []error) {
+	unqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
+
 	for _, p := range pkg.Imports {
 		relImp, strictRelImp := "", ""
 		internal := false
@@ -64,7 +66,6 @@ func checkPkg(
 			strictRelImp = p.PkgPath
 		}
 
-		unqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
 		unqImp := pkgs.UniquePackageName(relImp, strictRelImp)
 		pl, dollars := cfg.AllowOnlyIn.MatchingList(strictRelImp)
 		if pl == nil {

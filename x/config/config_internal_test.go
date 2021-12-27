@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/flowdev/spaghetti-cutter/data"
 	"reflect"
 	"testing"
+
+	"github.com/flowdev/spaghetti-cutter/data"
 )
 
 func TestRegexpForPattern(t *testing.T) {
