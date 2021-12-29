@@ -11,7 +11,7 @@ import (
 
 // Check checks the dependencies of the given package and reports offending
 // imports.
-func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap *data.DependencyMap) []error {
+func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config) []error {
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	checkSpecial := checkStandard
 	pkgImps := data.PkgImports{}
@@ -38,11 +38,7 @@ func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config, depMap *data.De
 		}
 	}
 
-	unqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
 	errs := checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkSpecial, &pkgImps)
-	if !pkgs.IsTestPackage(pkg) && len(pkgImps.Imports) > 0 {
-		(*depMap)[unqPkg] = pkgImps
-	}
 	return errs
 }
 

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/flowdev/spaghetti-cutter/data"
 	"github.com/flowdev/spaghetti-cutter/deps"
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/size"
@@ -76,14 +75,13 @@ func cut(args []string) int {
 		return 6
 	}
 
-	var errs []error
-	depMap := make(data.DependencyMap, 256)
-
 	rootPkg := parse.RootPkg(packs)
 	log.Printf("INFO - root package: %s", rootPkg)
 	pkgInfos := pkgs.UniquePackages(packs)
+
+	var errs []error
 	for _, pkgInfo := range pkgInfos {
-		errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg, &depMap))
+		errs = addErrors(errs, deps.Check(pkgInfo.Pkg, rootPkg, cfg))
 		errs = addErrors(errs, size.Check(pkgInfo.Pkg, rootPkg, cfg.Size))
 	}
 
