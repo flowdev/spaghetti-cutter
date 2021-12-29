@@ -108,21 +108,6 @@ func copyDepsRecursive(
 	}
 }
 
-// DocMatchStringIndex matches pkg in links and returns its index.
-// Only full matches are returned. If pkg doesn't match, pkg+"/" is tried.
-// -1 is returned for no match.
-func DocMatchStringIndex(pkg string, links PatternList) (idx int) {
-	i, full := links.MatchStringIndex(pkg, nil)
-	if full {
-		return i
-	}
-	i, full = links.MatchStringIndex(pkg+"/", nil)
-	if full {
-		return i
-	}
-	return -1
-}
-
 // PkgForPattern returns the (parent) package of the given package pattern.
 // If pkg doesn't contain any wildcard '*' the whole string is returned.
 // Otherwise everything up to the last '/' before the wildcard or

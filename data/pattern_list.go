@@ -26,7 +26,7 @@ func NewSimplePatternList(patterns []string, key string) (PatternList, error) {
 // String implements Stringer and returns the list of
 // patterns, or "..." if no patterns have been added.
 func (pl PatternList) String() string {
-	if pl == nil || len(pl) <= 0 {
+	if len(pl) <= 0 {
 		return "..."
 	}
 	var b strings.Builder
@@ -52,9 +52,6 @@ func (pl PatternList) MatchString(s string, dollars []string) (atAll, full bool)
 // MatchStringIndex returns the index of the pattern in the list that matches
 // the given string and an indicator if it was a full match.
 func (pl PatternList) MatchStringIndex(s string, dollars []string) (idx int, full bool) {
-	if pl == nil {
-		return -1, false
-	}
 	idx = -1
 	for i, p := range pl {
 		if m := p.Regexp.FindStringSubmatch(s); len(m) > 0 {
@@ -78,4 +75,17 @@ func matchDollars(given, found []string, idxs []int) bool {
 		}
 	}
 	return true
+}
+
+// DocMatchStringIndex matches pkg in links and returns its index.
+// Only full matches are returned. If pkg doesn't match, pkg+"/" is tried.
+// -1 is returned for no match.
+func DocMatchStringIndex(pkg string, links PatternList) (idx int) {
+	if i, full := links.MatchStringIndex(pkg, nil); full {
+		return i
+	}
+	if i, full := links.MatchStringIndex(pkg+"/", nil); full {
+		return i
+	}
+	return -1
 }
