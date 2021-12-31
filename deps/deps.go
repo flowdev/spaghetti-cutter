@@ -14,17 +14,14 @@ import (
 func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config) []error {
 	relPkg, strictRelPkg := pkgs.RelativePackageName(pkg, rootPkg)
 	checkSpecial := checkStandard
-	pkgImps := data.PkgImports{}
 
 	var fullmatch, matchDB bool
 	if _, fullmatch = isPackageInList(cfg.God, nil, relPkg, strictRelPkg); fullmatch {
 		checkSpecial = checkGod
-		pkgImps.PkgType = data.TypeGod
 	}
 	if matchDB, fullmatch = isPackageInList(cfg.DB, nil, relPkg, strictRelPkg); matchDB {
 		if fullmatch {
 			checkSpecial = checkDB
-			pkgImps.PkgType = data.TypeDB
 		} else {
 			checkSpecial = checkHalfDB
 		}
@@ -32,13 +29,12 @@ func Check(pkg *pkgs.Package, rootPkg string, cfg config.Config) []error {
 	if matchTool, fullmatch := isPackageInList(cfg.Tool, nil, relPkg, strictRelPkg); matchTool {
 		if fullmatch {
 			checkSpecial = checkTool
-			pkgImps.PkgType = data.TypeTool
 		} else if !matchDB {
 			checkSpecial = checkHalfTool
 		}
 	}
 
-	errs := checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkSpecial, &pkgImps)
+	errs := checkPkg(pkg, relPkg, strictRelPkg, rootPkg, cfg, checkSpecial)
 	return errs
 }
 
@@ -47,7 +43,6 @@ func checkPkg(
 	relPkg, strictRelPkg, rootPkg string,
 	cfg config.Config,
 	checkSpecial func(string, string, string, string, config.Config) error,
-	imps *data.PkgImports,
 ) (errs []error) {
 	unqPkg := pkgs.UniquePackageName(relPkg, strictRelPkg)
 
@@ -77,10 +72,6 @@ func checkPkg(
 		}
 
 		if internal {
-			if !pkgs.IsTestPackage(pkg) {
-				imps.Imports = saveDep(imps.Imports, relImp, strictRelImp, cfg)
-			}
-
 			// check in allow first:
 			pl = nil
 			if strictRelPkg != "" {
@@ -180,22 +171,4 @@ func isPackageInList(pl data.PatternList, dollars []string, pkg, strictPkg strin
 		}
 	}
 	return pl.MatchString(pkg, dollars)
-}
-
-func saveDep(im map[string]data.PkgType, relImp, strictRelImp string, cfg config.Config) map[string]data.PkgType {
-	if len(im) == 0 {
-		im = make(map[string]data.PkgType, 32)
-	}
-	unqImp := pkgs.UniquePackageName(relImp, strictRelImp)
-
-	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
-		im[unqImp] = data.TypeTool
-	} else if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
-		im[unqImp] = data.TypeDB
-	} else if _, full := isPackageInList(cfg.God, nil, relImp, strictRelImp); full {
-		im[unqImp] = data.TypeGod
-	} else {
-		im[unqImp] = data.TypeStandard
-	}
-	return im
 }
