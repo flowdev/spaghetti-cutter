@@ -56,14 +56,10 @@ func checkPkg(
 		} else {
 			strictRelImp = p.PkgPath
 		}
-
 		unqImp := pkgs.UniquePackageName(relImp, strictRelImp)
-		pl, dollars := cfg.AllowOnlyIn.MatchingList(strictRelImp)
-		if pl == nil {
-			pl, dollars = cfg.AllowOnlyIn.MatchingList(relImp)
-		}
-		if pl != nil {
-			if _, full := isPackageInList(pl, dollars, relPkg, strictRelPkg); !full {
+
+		if hasKey, hasValue := cfg.AllowOnlyIn.HasKeyValue(relImp, strictRelImp, relPkg, strictRelPkg); hasKey {
+			if !hasValue {
 				errs = append(errs, fmt.Errorf(
 					"package '%s' isn't allowed to import package '%s' (because of allowOnlyIn)",
 					unqPkg, unqImp))
@@ -73,14 +69,7 @@ func checkPkg(
 
 		if internal {
 			// check in allow first:
-			pl = nil
-			if strictRelPkg != "" {
-				pl, dollars = cfg.AllowAdditionally.MatchingList(strictRelPkg)
-			}
-			if pl == nil {
-				pl, dollars = cfg.AllowAdditionally.MatchingList(relPkg)
-			}
-			if _, full := isPackageInList(pl, dollars, relImp, strictRelImp); full {
+			if hasKey, hasValue := cfg.AllowAdditionally.HasKeyValue(relPkg, strictRelPkg, relImp, strictRelImp); hasKey && hasValue {
 				continue // this import is fine
 			}
 

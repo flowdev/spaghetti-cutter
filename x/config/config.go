@@ -46,18 +46,33 @@ func (pm *PatternMap) String() string {
 	return s[:len(s)-3]
 }
 
-// MatchingList returns the PatternList and submatches in the key if any key of
-// this pattern map matches the given string and nil otherwise.
-func (pm *PatternMap) MatchingList(s string) (data.PatternList, []string) {
+// HasKeyValue checks if this pattern map contains the given key value pair.
+// The strict versions are checked first
+// (1. strictKey+strictValue, 2. strictKey+value, 3. key+strictValue, 4. key+value).
+func (pm *PatternMap) HasKeyValue(key, strictKey, value, strictValue string) (hasKey, hasValue bool) {
 	if pm == nil {
-		return nil, nil
+		return false, false
 	}
-	for _, group := range *pm {
-		if m := group.left.Regexp.FindStringSubmatch(s); len(m) > 0 {
-			return group.right, m[1:]
+
+	for _, k := range []string{strictKey, key} {
+		if k == "" {
+			continue
+		}
+		for _, group := range *pm {
+			if m := group.left.Regexp.FindStringSubmatch(k); len(m) > 0 {
+				dollars := m[1:]
+
+				if _, full := group.right.MatchString(strictValue, dollars); strictValue != "" && full {
+					return true, true
+				}
+				if _, full := group.right.MatchString(value, dollars); value != "" && full {
+					return true, true
+				}
+				hasKey = true
+			}
 		}
 	}
-	return nil, nil
+	return hasKey, false
 }
 
 // Config contains the parsed configuration.
