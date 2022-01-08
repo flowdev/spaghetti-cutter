@@ -2,7 +2,6 @@ package config_test
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/flowdev/spaghetti-cutter/x/config"
@@ -170,50 +169,125 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestPatternMap(t *testing.T) {
+func TestPatternMapHasKeyValue(t *testing.T) {
 	specs := []struct {
-		name                string
-		givenJSON           string
-		givenLeftPattern    string
-		expectedLeftMatch   bool
-		expectedRightString string
+		name             string
+		givenJSON        string
+		givenKey         string
+		givenStrictKey   string
+		givenValue       string
+		givenStrictValue string
+		expectedHasKey   bool
+		expectedHasValue bool
 	}{
 		{
-			name:                "simple-pair",
-			givenJSON:           `"a": ["b"]`,
-			givenLeftPattern:    "a",
-			expectedLeftMatch:   true,
-			expectedRightString: "`b`",
+			name:             "simple-pair-full-match",
+			givenJSON:        `"a": ["b"]`,
+			givenKey:         "a",
+			givenStrictKey:   "",
+			givenValue:       "b",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: true,
 		}, {
-			name:                "multiple-pairs",
-			givenJSON:           `"a": ["b", "c", "do", "foo"]`,
-			givenLeftPattern:    "a",
-			expectedLeftMatch:   true,
-			expectedRightString: "`b`, `c`, `do`, `foo`",
+			name:             "simple-pair-half-match",
+			givenJSON:        `"a": ["b"]`,
+			givenKey:         "a",
+			givenStrictKey:   "",
+			givenValue:       "c",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: false,
 		}, {
-			name:                "one-pair-many-stars",
-			givenJSON:           `"a/*/b/**": ["c/*/d/**"]`,
-			givenLeftPattern:    "a/foo/b/bar/doo",
-			expectedLeftMatch:   true,
-			expectedRightString: "`c/*/d/**`",
+			name:             "simple-pair-no-match",
+			givenJSON:        `"a": ["b"]`,
+			givenKey:         "c",
+			givenStrictKey:   "",
+			givenValue:       "d",
+			givenStrictValue: "",
+			expectedHasKey:   false,
+			expectedHasValue: false,
 		}, {
-			name:                "no-match",
-			givenJSON:           `"a/*/b/**": ["c"]`,
-			givenLeftPattern:    "a/ahoi/b",
-			expectedLeftMatch:   false,
-			expectedRightString: "",
+			name:             "multiple-pairs-full-match",
+			givenJSON:        `"a": ["b", "c", "do", "foo"]`,
+			givenKey:         "",
+			givenStrictKey:   "a",
+			givenValue:       "do",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: true,
 		}, {
-			name:                "dollars",
-			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e/$1/f"]`,
-			givenLeftPattern:    "a/foo/b/bar/car/c",
-			expectedLeftMatch:   true,
-			expectedRightString: "`d/$2/e/$1/f`",
+			name:             "one-pair-many-stars-full-match",
+			givenJSON:        `"a/*/b/**": ["c/*/d/**"]`,
+			givenKey:         "a/foo/b/bar/doo",
+			givenStrictKey:   "",
+			givenValue:       "c/fox/d/baz/dox",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: true,
 		}, {
-			name:                "all-complexity",
-			givenJSON:           `"foo/bar/**": ["b"], "*/*a/**": ["*/*b/**", "b*/c*d/**"]`,
-			givenLeftPattern:    "foo/bara/doo/ey",
-			expectedLeftMatch:   true,
-			expectedRightString: "`*/*b/**`, `b*/c*d/**`",
+			name:             "one-pair-many-stars-half-match",
+			givenJSON:        `"a/*/b/**": ["c/*/d/**"]`,
+			givenKey:         "a/foo/b/bar/doo",
+			givenStrictKey:   "",
+			givenValue:       "c/fox/d",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: false,
+		}, {
+			name:             "one-pair-many-stars-no-match",
+			givenJSON:        `"a/*/b/**": ["c"]`,
+			givenKey:         "a/ahoi/b",
+			givenStrictKey:   "",
+			givenValue:       "c",
+			givenStrictValue: "",
+			expectedHasKey:   false,
+			expectedHasValue: false,
+		}, {
+			name:             "shuffled-dollars-full-match",
+			givenJSON:        `"a/$*/b/$**/c": ["d/$2/e/$1/f"]`,
+			givenKey:         "a/foo/b/bar/car/c",
+			givenStrictKey:   "ahoi",
+			givenValue:       "d/bar/car/e/foo/f",
+			givenStrictValue: "car",
+			expectedHasKey:   true,
+			expectedHasValue: true,
+		}, {
+			name:             "use-not-all-dollars-full-match",
+			givenJSON:        `"a/$*/b/$**/c": ["d/$2/e"]`,
+			givenKey:         "a/foo/b/bar/car/c",
+			givenStrictKey:   "",
+			givenValue:       "d/bar/car/e",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: true,
+		}, {
+			name:             "use-no-dollars-full-match",
+			givenJSON:        `"a/$*/b/$**/c": ["d/e/f"]`,
+			givenKey:         "ahoi",
+			givenStrictKey:   "a/foo/b/bar/car/c",
+			givenValue:       "car",
+			givenStrictValue: "d/e/f",
+			expectedHasKey:   true,
+			expectedHasValue: true,
+		}, {
+			name:             "double-use-dollar-full-match",
+			givenJSON:        `"a/$**/b": ["c/$1/d/$1/e"]`,
+			givenKey:         "a/foo/bar/b",
+			givenStrictKey:   "",
+			givenValue:       "c/foo/bar/d/foo/bar/e",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: true,
+		}, {
+			name:             "competing-keys-full-match",
+			givenJSON:        `"foo/bar/**": ["b"], "$*/$*ar/b$*": ["$1/$3b/$2", "fo*/c*d/**"]`,
+			givenKey:         "foo/bar/by",
+			givenStrictKey:   "",
+			givenValue:       "foo/yb/b",
+			givenStrictValue: "",
+			expectedHasKey:   true,
+			expectedHasValue: true,
 		},
 	}
 
@@ -224,118 +298,23 @@ func TestPatternMap(t *testing.T) {
 			if err != nil {
 				t.Fatalf("got unexpected error: %v", err)
 			}
-			pm := cfg.AllowOnlyIn
 
-			pl, _ := pm.MatchingList(spec.givenLeftPattern)
+			actualHasKey, actualHasValue := cfg.AllowOnlyIn.HasKeyValue(
+				spec.givenKey,
+				spec.givenStrictKey,
+				spec.givenValue,
+				spec.givenStrictValue,
+			)
 
-			if spec.expectedLeftMatch && pl == nil {
-				t.Fatalf("expected left match for pattern %q in map %v", spec.givenLeftPattern, pm)
-			} else if !spec.expectedLeftMatch && pl != nil {
-				t.Fatalf("expected NO left match for pattern %q in map %v but got: %v", spec.givenLeftPattern, pm, pl)
-			}
-			if !spec.expectedLeftMatch {
-				return
-			}
-
-			if spec.expectedRightString != pl.String() {
-				t.Errorf("expected right string representation %q but got: %q", spec.expectedRightString, pl.String())
-			}
-		})
-	}
-}
-
-func TestDollars(t *testing.T) {
-	specs := []struct {
-		name                string
-		givenJSON           string
-		givenLeftPattern    string
-		givenRightPattern   string
-		expectedKeyDollars  []string
-		expectedRightString string
-	}{
-		{
-			name:                "simple-star",
-			givenJSON:           `"a/$*/b": ["c/$1/d"]`,
-			givenLeftPattern:    "a/foo/b",
-			givenRightPattern:   "c/foo/d",
-			expectedKeyDollars:  []string{"foo"},
-			expectedRightString: "`c/$1/d`",
-		}, {
-			name:                "double-star",
-			givenJSON:           `"a/$**/b": ["c/$1/d"]`,
-			givenLeftPattern:    "a/foo/bar/b",
-			givenRightPattern:   "c/foo/bar/d",
-			expectedKeyDollars:  []string{"foo/bar"},
-			expectedRightString: "`c/$1/d`",
-		}, {
-			name:                "many-dollars",
-			givenJSON:           `"a/$*/b/$**/c": ["d/$1/e/$2/f"]`,
-			givenLeftPattern:    "a/foo/b/bar/car/c",
-			givenRightPattern:   "d/foo/e/bar/car/f",
-			expectedKeyDollars:  []string{"foo", "bar/car"},
-			expectedRightString: "`d/$1/e/$2/f`",
-		}, {
-			name:                "shuffled-dollars",
-			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e/$1/f"]`,
-			givenLeftPattern:    "a/foo/b/bar/car/c",
-			givenRightPattern:   "d/bar/car/e/foo/f",
-			expectedKeyDollars:  []string{"foo", "bar/car"},
-			expectedRightString: "`d/$2/e/$1/f`",
-		}, {
-			name:                "use-not-all-dollars",
-			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e"]`,
-			givenLeftPattern:    "a/foo/b/bar/car/c",
-			givenRightPattern:   "d/bar/car/e",
-			expectedKeyDollars:  []string{"foo", "bar/car"},
-			expectedRightString: "`d/$2/e`",
-		}, {
-			name:                "use-no-dollars",
-			givenJSON:           `"a/$*/b/$**/c": ["d/e/f"]`,
-			givenLeftPattern:    "a/foo/b/bar/car/c",
-			givenRightPattern:   "d/e/f",
-			expectedKeyDollars:  []string{"foo", "bar/car"},
-			expectedRightString: "`d/e/f`",
-		}, {
-			name:                "double-use-dollar",
-			givenJSON:           `"a/$**/b": ["c/$1/d/$1/e"]`,
-			givenLeftPattern:    "a/foo/bar/b",
-			givenRightPattern:   "c/foo/bar/d/foo/bar/e",
-			expectedKeyDollars:  []string{"foo/bar"},
-			expectedRightString: "`c/$1/d/$1/e`",
-		}, {
-			name:                "all-at-once",
-			givenJSON:           `"a/$*/b/$**/c": ["d/$2/e/$1/f/$1/g/$2/h"]`,
-			givenLeftPattern:    "a/foo/b/bar/car/c",
-			givenRightPattern:   "d/bar/car/e/foo/f/foo/g/bar/car/h",
-			expectedKeyDollars:  []string{"foo", "bar/car"},
-			expectedRightString: "`d/$2/e/$1/f/$1/g/$2/h`",
-		},
-	}
-
-	for _, spec := range specs {
-		t.Run(spec.name, func(t *testing.T) {
-			cfgBytes := []byte(`{ "allowOnlyIn": { ` + spec.givenJSON + ` } }`)
-			cfg, err := config.Parse(cfgBytes, spec.name)
-			if err != nil {
-				t.Fatalf("got unexpected error: %v", err)
-			}
-			pm := cfg.AllowOnlyIn
-
-			pl, actualKeyDollars := pm.MatchingList(spec.givenLeftPattern)
-
-			if pl == nil {
-				t.Fatalf("expected left match for pattern %q in map %v", spec.givenLeftPattern, pm)
+			if spec.expectedHasKey != actualHasKey {
+				t.Errorf("expected hasKey for keys %q/%q in map %v to be %t, got %t",
+					spec.givenKey, spec.givenStrictKey, cfg.AllowOnlyIn, spec.expectedHasKey, actualHasKey)
 			}
 
-			if !reflect.DeepEqual(actualKeyDollars, spec.expectedKeyDollars) {
-				t.Errorf("expected dollar matches in key to be %q, got %q", spec.expectedKeyDollars, actualKeyDollars)
-			}
-			if spec.expectedRightString != pl.String() {
-				t.Errorf("expected right string representation %q but got: %q", spec.expectedRightString, pl.String())
-			}
-			if _, fullmatch := pl.MatchString(spec.givenRightPattern, spec.expectedKeyDollars); !fullmatch {
-				t.Errorf("right pattern %q didn't match with dollars %q",
-					spec.givenRightPattern, spec.expectedKeyDollars)
+			if spec.expectedHasValue != actualHasValue {
+				t.Errorf("expected hasValue for keys %q/%q and values %q/%q in map %v to be %t, got %t",
+					spec.givenKey, spec.givenStrictKey, spec.givenValue, spec.givenStrictValue,
+					cfg.AllowOnlyIn, spec.expectedHasValue, actualHasValue)
 			}
 		})
 	}
