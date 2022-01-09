@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/flowdev/spaghetti-cutter/config"
 	"github.com/flowdev/spaghetti-cutter/data"
-	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )
 

@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/flowdev/spaghetti-cutter/config"
 	"github.com/flowdev/spaghetti-cutter/deps"
 	"github.com/flowdev/spaghetti-cutter/parse"
 	"github.com/flowdev/spaghetti-cutter/size"
-	"github.com/flowdev/spaghetti-cutter/x/config"
 	"github.com/flowdev/spaghetti-cutter/x/dirs"
 	"github.com/flowdev/spaghetti-cutter/x/pkgs"
 )

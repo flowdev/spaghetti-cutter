@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	"sort"
-	"strings"
 
 	"github.com/flowdev/spaghetti-cutter/data"
 	"github.com/hjson/hjson-go"
@@ -14,71 +12,10 @@ import (
 // File is the name of the configuration file
 const File = ".spaghetti-cutter.hjson"
 
-type patternGroup struct {
-	left  data.Pattern
-	right data.PatternList
-}
-
-// PatternMap is a map from a single pattern to a list of patterns.
-type PatternMap map[string]patternGroup
-
-// String implements Stringer and returns the map of patterns,
-// or "....." if it is empty.
-func (pm *PatternMap) String() string {
-	if pm == nil || len(*pm) <= 0 {
-		return "....."
-	}
-	keys := make([]string, 0, len(*pm))
-	for k := range *pm {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	var b strings.Builder
-	for _, left := range keys {
-		b.WriteString("`")
-		b.WriteString(left)
-		b.WriteString("`")
-		b.WriteString(": ")
-		b.WriteString((*pm)[left].right.String())
-		b.WriteString(" ; ")
-	}
-	s := b.String()
-	return s[:len(s)-3]
-}
-
-// HasKeyValue checks if this pattern map contains the given key value pair.
-// The strict versions are checked first
-// (1. strictKey+strictValue, 2. strictKey+value, 3. key+strictValue, 4. key+value).
-func (pm *PatternMap) HasKeyValue(key, strictKey, value, strictValue string) (hasKey, hasValue bool) {
-	if pm == nil {
-		return false, false
-	}
-
-	for _, k := range []string{strictKey, key} {
-		if k == "" {
-			continue
-		}
-		for _, group := range *pm {
-			if m := group.left.Regexp.FindStringSubmatch(k); len(m) > 0 {
-				dollars := m[1:]
-
-				if _, full := group.right.MatchString(strictValue, dollars); strictValue != "" && full {
-					return true, true
-				}
-				if _, full := group.right.MatchString(value, dollars); value != "" && full {
-					return true, true
-				}
-				hasKey = true
-			}
-		}
-	}
-	return hasKey, false
-}
-
 // Config contains the parsed configuration.
 type Config struct {
-	AllowOnlyIn       *PatternMap
-	AllowAdditionally *PatternMap
+	AllowOnlyIn       *data.PatternMap
+	AllowAdditionally *data.PatternMap
 	Tool              data.PatternList
 	DB                data.PatternList
 	God               data.PatternList
@@ -111,7 +48,7 @@ func convertFromJSON(jcfg map[string]interface{}) (Config, error) {
 	var size uint
 	var noGod bool
 	var pl data.PatternList
-	var pm *PatternMap
+	var pm *data.PatternMap
 
 	cfg := Config{}
 
@@ -153,7 +90,7 @@ func convertFromJSON(jcfg map[string]interface{}) (Config, error) {
 	return cfg, nil
 }
 
-func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
+func convertPatternMapFromJSON(i interface{}, key string) (*data.PatternMap, error) {
 	var err error
 	var pl data.PatternList
 	var re *regexp.Regexp
@@ -168,7 +105,7 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 		return nil, fmt.Errorf("expected string map for key '%s', got type: %T", key, i)
 	}
 
-	pm := PatternMap(make(map[string]patternGroup, len(m)))
+	pm := data.PatternMap(make(map[string]data.PatternGroup, len(m)))
 
 	for k, v := range m {
 		if re, dollars, _, err = data.RegexpForPattern(k, data.EnumDollarStar, 0); err != nil {
@@ -177,9 +114,9 @@ func convertPatternMapFromJSON(i interface{}, key string) (*PatternMap, error) {
 		if pl, err = convertPatternListFromJSON(v, key+": "+k, data.EnumDollarDigit, dollars); err != nil {
 			return nil, err
 		}
-		pm[k] = patternGroup{
-			left:  data.Pattern{Pattern: k, Regexp: re},
-			right: pl,
+		pm[k] = data.PatternGroup{
+			Left:  data.Pattern{Pattern: k, Regexp: re},
+			Right: pl,
 		}
 	}
 
