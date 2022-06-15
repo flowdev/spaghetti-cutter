@@ -21,32 +21,8 @@ So this tool has to care only about additional undesired dependencies.
 I gave a talk that includes the motivation for this tool and some usage examples:
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
-Additionally this tool documents the structure of a project in the
-[configuration](./.spaghetti-cutter.hjson) and the
-[package dependencies](./package_dependencies.md).
-
-<!-- DOES NOT WORK according to the specification at:
-	https://github.github.com/gfm/#html-blocks
-
-<style
-  type="text/css">
-h1 {color:red;}
-
-p {color:blue;}
-</style>
-
-okay
--->
-
-<!-- spaghetti-cutter: start 
-TestMarkDown table for generated documentation:
-
-| | C o l u m n / h e a d e r / 1 | C o l u m n / h e a d e r / 2 | C o l u m n / h e a d e r / 3 | C o l u m n / h e a d e r / 4 | C o l u m n / h e a d e r / 5 | C o l u m n / h e a d e r / 6 | C o l u m n / h e a d e r / 7 | C o l u m n / h e a d e r / 8 | C o l u m n / h e a d e r / 9 | C o l u m n / h e a d e r / 1 0 | C o l u m n / h e a d e r / 1 1 | C o l u m n / h e a d e r / 1 2 | C o l u m n / h e a d e r / 1 3 | C o l u m n / h e a d e r / 1 4 | C o l u m n / h e a d e r / 1 5 | C o l u m n / h e a d e r / 1 6 | C o l u m n / h e a d e r / 1 7 | C o l u m n / h e a d e r / 1 8 | C o l u m n / h e a d e r / 1 9 | C o l u m n / h e a d e r / 2 0 | C o l u m n / h e a d e r / 2 1 | C o l u m n / h e a d e r / 2 2 | C o l u m n / h e a d e r / 2 3 | C o l u m n / h e a d e r / 2 4 | C o l u m n / h e a d e r / 2 5 | C o l u m n / h e a d e r / 2 6 | C o l u m n / h e a d e r / 2 7 | C o l u m n / h e a d e r / 2 8 | C o l u m n / h e a d e r / 2 9 | C o l u m n / h e a d e r / 3 0 |
-| :- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| `Row / header / 1` | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  |
-| `Row / header / 1 / sub_package` |   |   |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X | X |  |  | X | X |  |  |  |  | X |
--->
-<!-- spaghetti-cutter: end -->
+Additionally this tool documents the structure of a project in it's
+[configuration](./.spaghetti-cutter.hjson).
 
 
 ## Usage
@@ -57,6 +33,9 @@ from anywhere inside your project.
 The possible command line options are:
 ```
 Usage of spaghetti-cutter:
+  -e    don't report errors and don't exit with an error (shorthand)
+  -noerror
+        don't report errors and don't exit with an error
   -r string
         root directory of the project (shorthand) (default ".")
   -root string
@@ -110,13 +89,13 @@ You can fix that by adding a bit of configuration.
 Other non-zero return codes are possible for technical problems (unparsable code: 6, ...).
 If used properly in the build pipeline a non-zero return code will stop the
 build and the problem has to be fixed first.
-So undesired imports (spaghetti) are prevented.
+So undesired imports (spaghetti relationships) are prevented.
 
 
 ## Standard Use Case: Web API
 
 This tool was especially created with Web APIs in mind as that is what about
-95% of all Gophers do according to my own totally unscientifical research.
+95% of all Gophers do according to my own completely unscientifical research.
 
 So it offers special handling for the following cases:
 - Tools: Tool packages are allowed to be used everywhere else except in other
@@ -140,7 +119,7 @@ So it offers special handling for the following cases:
   `main` to a standard package with the `noGod` configuration key. This makes
   sense if you have got multiple `main` packages with different dependencies.
 
-These cases needn't be used and can be overwritten with explicit configuration.
+These cases needn't be used and can be overridden with explicit configuration.
 
 
 ## Configuration
@@ -242,7 +221,7 @@ A much better approach for teams goes this way:
 First include the latest version in your `go.mod` file, e.g.:
 ```
 require (
-	github.com/flowdev/spaghetti-cutter v0.9
+	github.com/flowdev/spaghetti-cutter v0.9.8
 )
 ```
 
@@ -258,7 +237,6 @@ import (
 )
 ```
 
-Or add the import line to an existing file with similar build comment.
 This ensures that the package is indeed fetched and built but not included in
 the main or test executables. This is the
 [canonical workaround](https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module)
@@ -267,98 +245,3 @@ Here is a [talk by Robert Radestock](https://www.youtube.com/watch?v=PhBhwgYFuw0
 about this topic.
 
 Finally you can run `go mod vendor` if that is what you like.
-
-
-## Open Decisions
-
-According to feedback from the community I am open to change things.
-Currently there are no features in discussion.
-
-
-## Best Practices
-
-For web APIs it is useful to split into independent business packages at router level.
-The router itself should be in a central (god) package. The split can be done in two ways:
-1. The central router calls handlers that reside in the business packages.
-1. The central router composes itself from subrouters in business packages.
-
-The second option minimizes the API surface of the business package and helps
-to ensure that all routes handled by a business package share a common URL path root.
-But it also adds the concept of subrouters that isn't used so widely and
-increasing cognitive load this way.
-Plus it makes it harder to find the implementation for a route.
-
-So I recommend to start with the first option and switch to the second when the
-central router becomes too big to handle.
-
-
-### Criteria For When To Split A Service
-
-A common reason to split a service is when different parts of the service have
-to scale very differently.
-A shop front-end that has to serve many thousand customers needs to scale much
-more than the shop back-end that only has to serve a few employees.
-Of course this isn't useful as long as you have got only a single instance of
-the shop front-end running.
-Please remember that Go is often used to consolidate many servers written in
-some script language. Often replacing ten script servers with a single Go
-instance saving a lot of hosting costs and operational work.
-Often a second main package for the front-end is the easiest way to go.
-
-Another good reason to split a service is when the data the different parts of
-the service work on is very or even completely different.
-Please remember that overlaping data will lead to redundancies and you have to
-ensure consistency on your own.
-After such a split the overall system is usually only eventual consistent.
-
-The last and weakest indicator is that the service is growing unbounded like cancer.
-It is completely normal that a service is growing.
-When the tests run for too long it is better to find a tool for handling
-monorepos that helps you to run only the necessary tests.
-Unfortunately I can't point you to one. But I know that this is a problem that
-has been solved multiple times.
-Such additional tools can go a long way before it makes sense to split a service.
-
-
-### Recommendation How To Split A Service If Really Useful
-
-I recommend to split a service if it is sure to be really useful by first
-looking at the package structure in `.spaghetti-cutter.hjson`.
-You would be careful to separate packages into own services if one domain package depends
-on another domain package per `allowAdditionally` directive.
-`tool` packages are a bit simpler since they tend to change less often.
-They should just serve a single purpose well.
-So they can be easily extracted into an external library or they can be copied
-if the reusage isn't driven by business needs but more accidental.
-If some `tool` packages won't be used by all the services after the split you
-should take advantage of that.
-
-Next it is important to look at the DB usage. Packages that share a lot of data
-or methods to access data should not be split into separate services.
-Now it is time to find the weakest link between future services.
-You should consider all three types of links:
-- `tool` packages (least important),
-- database usage (quite important) and
-- `allow` directives between domain packages (most important).
-
-When the weakest links are found it is great if you can even minimize these links.
-Over time they tend to accumulate and some aren't really necessary anymore.
-It is often great to get a perspective from the business side about this.
-
-Now it is time to replace the remaining internal calls between packages that
-will become separate services with external calls.
-RESTful HTTP requests and gRPC are used most often for this.
-Messaging between services can give you more scalability and decoupling but is
-harder to debug and some additional technology to master.
-Often you already have got a company wide standard for communication between services.
-
-Creating multiple main packages for the different services should be rather simple.
-Each should just be a subset of the old main package.
-If you have got more god packages than just `main` you should split them now of course.
-Now you already have multiple separately deployable services.
-
-Finally you can do the split.
-
-You can minimize the necessary work a lot by always watching dependencies grow
-and minimizing links as soon as possible.
-The `spaghetti-cutter` can be your companion on the way.

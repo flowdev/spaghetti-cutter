@@ -28,7 +28,7 @@ func cut(args []string) int {
 		defaultRoot  = "."
 		usageRoot    = "root directory of the project"
 		defaultNoErr = false
-		usageNoErr   = "don't report errors or exit with an error"
+		usageNoErr   = "don't report errors and don't exit with an error"
 	)
 	var startDir string
 	var noErr bool
