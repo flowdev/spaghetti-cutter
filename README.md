@@ -18,7 +18,7 @@ that helps to prevent Go spaghetti code (a.k.a. big ball of mud).
 Thankfully in the Go world circular dependencies between packages are already prevented by the compiler.
 So this tool has to care only about additional undesired dependencies.
 
-I gave a talk that includes the motivation for this tool and some usage examples:
+I gave a talk that includes the motivation for this tool and some (old) usage examples:
 [![Microservices - The End of Software Design](https://img.youtube.com/vi/ev0dD12bxmg/0.jpg)](https://www.youtube.com/watch?v=ev0dD12bxmg "Microservices - The End of Software Design")
 
 Additionally this tool documents the structure of a project in it's
@@ -207,6 +207,23 @@ The case with multiple executables with different dependencies is interesting, t
 ```
 Here we have got a front-end application for the shopping experience and a
 back-end application for updating the catalogue.
+
+Finally you can use variables in the key/value maps:
+```hjson
+{
+	"allowAdditonally": {"pkg/$*/db": ["pkg/$1/model"]},
+}
+```
+In this example there are big "modules" that each have their own database,
+model and tool packages.
+Cross "module" access can be easily prevented with only one line of
+configuration as the `$1` in the value has to be the same as the `$*` in the
+key.
+You can use `$**` similarly.
+Multiple variables are possible and they can be used as `$1` ... `$9` in the
+values (`$1` refering to the first `$*` and `$9` to the ninth `$**` in the key).
+The maximum of `9` should be big enough for really complex projects and
+helps to find configuration errors.
 
 
 ## Installation
