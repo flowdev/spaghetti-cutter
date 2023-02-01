@@ -15,7 +15,7 @@ func DirTree(root string) ([]*pkgs.Package, error) {
 		Logf:  nil, // log.Printf (for debug), nil (for release)
 		Dir:   root,
 		Tests: true,
-		Mode:  packages.NeedName | packages.NeedImports | packages.NeedSyntax,
+		Mode:  packages.NeedName | packages.NeedImports | packages.NeedSyntax | packages.NeedTypes,
 	}
 
 	packs, err := packages.Load(parseCfg, root+"/...")
