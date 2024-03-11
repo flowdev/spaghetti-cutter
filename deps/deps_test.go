@@ -40,59 +40,62 @@ func TestCheck(t *testing.T) {
 		}, {
 			name:           "standard-config-standard-proj",
 			givenRoot:      "standard-proj",
-			givenConfig:    `{"tool": ["x/*"], "db": ["db/*"]}`,
+			givenConfig:    `{"tool": ["x/*"], "db": ["db/*"], "allowAdditionally": {"db/store": ["db/model"]} }`,
 			expectedErrors: 0,
 		}, {
 			name:           "standard-config-complex-proj",
 			givenRoot:      "complex-proj",
-			givenConfig:    `{"tool": ["pkg/x/*"], "db": ["pkg/db/*"]}`,
+			givenConfig:    `{"tool": ["pkg/x/*"], "db": ["pkg/db/*"], "allowAdditionally": {"pkg/db/store": ["pkg/db/model"]} }`,
 			expectedErrors: 1,
 		}, {
 			name:      "allowOnlyIn-config-complex-proj",
 			givenRoot: "complex-proj",
 			givenConfig: `{
-				"allowOnlyIn": {"pkg/domain3": ["pkg/domain4", "cmd/exe2"]},
-				"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
-			}`,
+						"allowOnlyIn": {"pkg/domain3": ["pkg/domain4", "cmd/exe2"]},
+						"tool": ["pkg/x/*"], "db": ["pkg/db/*"],
+						"allowAdditionally": {"pkg/db/store": ["pkg/db/model"]}
+					}`,
 			expectedErrors: 0,
 		}, {
 			name:      "bad-allowOnlyIn-config-complex-proj",
 			givenRoot: "complex-proj",
 			givenConfig: `{
-				"allowOnlyIn": {"pkg/domain3": ["pkg/domain1", "cmd/exe2"]},
-				"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
-			}`,
+						"allowOnlyIn": {"pkg/domain3": ["pkg/domain1", "cmd/exe2"]},
+						"tool": ["pkg/x/*"], "db": ["pkg/db/*"]
+						"allowAdditionally": {"pkg/db/store": ["pkg/db/model"]}
+					}`,
 			expectedErrors: 1,
 		}, {
 			name:      "explicit-config-complex-proj",
 			givenRoot: "complex-proj",
 			givenConfig: `{
-				"tool": ["pkg/x/*"], "db": ["pkg/db/*"],
-				"allowAdditionally": {
-				  "pkg/domain4": ["pkg/domain3"],
-				  "cmd/exe1": ["pkg/domain1", "pkg/domain2"],
-				  "cmd/exe2": ["pkg/domain3", "pkg/domain4"]
-				},
-				"noGod": true
-			}`,
+						"tool": ["pkg/x/*"], "db": ["pkg/db/*"],
+						"allowAdditionally": {
+						  "pkg/domain4": ["pkg/domain3"],
+						  "cmd/exe1": ["pkg/domain1", "pkg/domain2"],
+						  "cmd/exe2": ["pkg/domain3", "pkg/domain4"],
+						  "pkg/db/store": ["pkg/db/model"]
+						},
+						"noGod": true
+					}`,
 			expectedErrors: 0,
 		}, {
 			name:           "standard-config-half-pkgs-proj",
 			givenRoot:      "half-pkgs-proj",
-			givenConfig:    `{tool: ["x/*"], db: ["db/*"]}`,
+			givenConfig:    `{tool: ["x/*"], db: ["db/*"], "allowAdditionally": {"db/store": ["db/model"]} }`,
 			expectedErrors: 2,
 		}, {
 			name:      "explicit-config-half-pkgs-proj",
 			givenRoot: "half-pkgs-proj",
 			givenConfig: `{
-				tool: ["x/*"]
-				db: ["db/*"]
-				allowAdditionally: {
-					// they just grew out of bounds!
-					"x/tool": ["x/tool/subtool"]
-					"db/store": ["db/store/substore"]
-				}
-			}`,
+						tool: ["x/*"]
+						db: ["db/*"]
+						allowAdditionally: {
+							// they just grew out of bounds!
+							"x/tool": ["x/tool/subtool"]
+							"db/store": ["db/model", "db/store/substore"]
+						}
+					}`,
 			expectedErrors: 0,
 		},
 	}

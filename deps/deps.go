@@ -100,13 +100,10 @@ func checkHalfTool(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config
 }
 
 func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
-	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
-		return nil
-	}
-	if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
-		return nil
-	}
 	if isTestPackage(relPkg, strictRelPkg) {
+		return nil
+	}
+	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
 		return nil
 	}
 	return fmt.Errorf("DB package '%s' isn't allowed to import package '%s'",
@@ -115,10 +112,10 @@ func checkDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Confi
 }
 
 func checkHalfDB(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
-	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
+	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
-	if isTestPackage(relPkg, strictRelPkg) {
+	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
 		return nil
 	}
 	return fmt.Errorf("DB sub-package '%s' isn't allowed to import package '%s'",
@@ -131,13 +128,13 @@ func checkGod(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Conf
 }
 
 func checkStandard(relPkg, strictRelPkg, relImp, strictRelImp string, cfg config.Config) error {
+	if isTestPackage(relPkg, strictRelPkg) {
+		return nil
+	}
 	if _, full := isPackageInList(cfg.Tool, nil, relImp, strictRelImp); full {
 		return nil
 	}
 	if _, full := isPackageInList(cfg.DB, nil, relImp, strictRelImp); full {
-		return nil
-	}
-	if isTestPackage(relPkg, strictRelPkg) {
 		return nil
 	}
 	return fmt.Errorf("domain package '%s' isn't allowed to import package '%s'",
