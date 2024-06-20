@@ -27,7 +27,7 @@ Additionally this tool documents the structure of a project in it's
 
 ## Usage
 
-You can simply call it with `go run github.com/flowdev/spaghetti-cutter`
+You can simply call it with `go run github.com/flowdev/spaghetti-cutter@latest`
 from anywhere inside your project.
 
 The possible command line options are:
@@ -105,9 +105,9 @@ So it offers special handling for the following cases:
   to be used anywhere else in the project. So you should use explicit
   configuration with explanations as comments (what the sub-packages contain
   and why they exist at all).
-- Database: DB packages are allowed to be used in other DB packages and
-  standard (business) packages. Of course they can use tool packages but
-  nothing else.  Domain data structures can be either DB or tool packages.
+- Database: DB packages are allowed to be used in standard (business) packages.
+  Of course they can use tool packages but nothing else.  Domain data
+  structures should be in a tool package.
 - Database sub-packages: Sub-packages of DB packages are allowed to only import
   tool packages like DB packages. Additionally they aren't allowed to be used
   anywhere else in the project. So you should use explicit configuration with
@@ -233,12 +233,15 @@ Of course you can just head over to the
 and grab a pre-built binary for your OS.
 But that is difficult to keep in sync when collaborating with others in a team.
 
-A much better approach for teams goes this way:
+A much better way is to just do: `go run github.com/flowdev/spaghetti-cutter@latest`
+If you use an explicit version and use it in multiple places the next approach is better.
+
+A great approach for big projects goes this way:
 
 First include the latest version in your `go.mod` file, e.g.:
 ```
 require (
-	github.com/flowdev/spaghetti-cutter v0.9.8
+	github.com/flowdev/spaghetti-cutter v0.9.9
 )
 ```
 
